@@ -1,0 +1,36 @@
+name: ApexSuite CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Workspace Dependencies
+        run: npm run install:all
+
+      - name: Verify Environment Template
+        run: cp .env.example .env
+
+      - name: Backend Code Syntax Verification
+        run: node --check server/index.js
+
+      - name: Execute Automated Test Suite
+        run: npm test

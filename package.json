@@ -1,0 +1,18 @@
+{
+  "name": "apexsuite-monorepo",
+  "version": "2.6.0",
+  "description": "Production AI-Powered Business Management System (ERP, CRM, POS, Finance)",
+  "private": true,
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "npm run test --prefix server"
+  },
+  "author": "Shigosag",
+  "license": "MIT"
+}

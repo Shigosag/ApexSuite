@@ -1,0 +1,106 @@
+:root {
+  --primary-pink: #f34b7d;
+  --primary-pink-glow: rgba(243, 75, 125, 0.35);
+  --bg-dark: #0b1120;
+  --bg-light: #f8fafc;
+}
+
+body.dark-theme {
+  background-color: var(--bg-dark);
+  color: #f8fafc;
+}
+
+body.light-theme {
+  background-color: var(--bg-light);
+  color: #0f172a;
+}
+
+.glass-panel {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+body.dark-theme .glass-panel {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Light Mode Overrides */
+body.light-theme .glass-panel {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .text-gray-400,
+body.light-theme .text-gray-500,
+body.light-theme .text-slate-400,
+body.light-theme .text-gray-300 {
+  color: #334155 !important;
+}
+
+body.light-theme .text-slate-200,
+body.light-theme .text-white {
+  color: #0f172a !important;
+}
+
+body.light-theme table thead,
+body.light-theme .bg-slate-800\/60,
+body.light-theme .bg-slate-800\/80 {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+body.light-theme tr {
+  border-color: #e2e8f0 !important;
+}
+
+body.light-theme input,
+body.light-theme select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+
+body.light-theme aside,
+body.light-theme header {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.light-theme .bg-slate-800,
+body.light-theme .bg-slate-800\/90,
+body.light-theme .bg-slate-800\/80,
+body.light-theme .bg-slate-900,
+body.light-theme .bg-slate-900\/90,
+body.light-theme .bg-slate-900\/80,
+body.light-theme .bg-slate-950 {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+body.light-theme button.bg-slate-800:hover,
+body.light-theme button.bg-slate-900:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.pink-btn {
+  background-color: var(--primary-pink);
+  color: #ffffff !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.pink-btn:hover {
+  background-color: #d93d6b;
+  box-shadow: 0 0 15px var(--primary-pink-glow);
+}
+
+.pink-brand-text {
+  color: var(--primary-pink) !important;
+}
+
+.pink-glow {
+  box-shadow: 0 0 15px var(--primary-pink-glow);
+}
