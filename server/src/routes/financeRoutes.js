@@ -11,6 +11,7 @@ router.get('/invoices', authenticateToken, financeController.getInvoices);
 router.post('/invoices/pay', authenticateToken, requireRole(['Admin', 'Manager']), financeController.payInvoice);
 router.get('/accounts-payable', authenticateToken, financeController.getAccountsPayable);
 router.post('/accounts-payable', authenticateToken, requireRole(['Admin', 'Manager']), financeController.logAccountPayable);
+router.post('/accounts-payable/pay', authenticateToken, requireRole(['Admin', 'Manager']), financeController.payAccountPayable);
 router.get('/chart-of-accounts', authenticateToken, financeController.getChartOfAccounts);
 
 module.exports = router;
