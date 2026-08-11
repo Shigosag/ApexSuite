@@ -217,6 +217,59 @@ async function renderCRMPage() {
     }
   };
 
+  window.openEditLeadModal = (l) => {
+    openModal(`Edit Deal: ${l.title}`, `
+      <form onsubmit="handleUpdateLead(event, ${l.id})" class="space-y-3">
+        <div>
+          <label class="text-[10px] text-gray-400">Deal Title *</label>
+          <input type="text" id="editLTitle" value="${l.title}" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400">Expected Value *</label>
+          <input type="number" step="0.01" id="editLValue" value="${l.value}" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs font-mono">
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400">Pipeline Stage</label>
+          <select id="editLStage" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
+            <option value="New" ${l.stage === 'New' ? 'selected' : ''}>New</option>
+            <option value="Contacted" ${l.stage === 'Contacted' ? 'selected' : ''}>Contacted</option>
+            <option value="Proposal" ${l.stage === 'Proposal' ? 'selected' : ''}>Proposal</option>
+            <option value="Won" ${l.stage === 'Won' ? 'selected' : ''}>Won</option>
+            <option value="Lost" ${l.stage === 'Lost' ? 'selected' : ''}>Lost</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full pink-btn py-2.5 rounded-xl font-bold text-xs mt-2">Update Deal</button>
+      </form>
+    `);
+  };
+
+  window.handleUpdateLead = async (e, leadId) => {
+    e.preventDefault();
+    try {
+      await apiService.updateLead(leadId, {
+        title: document.getElementById('editLTitle').value,
+        value: parseFloat(document.getElementById('editLValue').value),
+        stage: document.getElementById('editLStage').value
+      });
+      closeModal();
+      showToast('Deal updated!', 'success');
+      navigate('crm');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  window.deleteLeadPipeline = async (leadId) => {
+    if (!confirm('Are you sure you want to delete this deal pipeline?')) return;
+    try {
+      await apiService.deleteLead(leadId);
+      showToast('Deal pipeline removed.', 'success');
+      navigate('crm');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
   window.updateLeadStage = async (leadId, newStage) => {
     try {
       await apiService.updateLeadStage(leadId, newStage);
@@ -296,7 +349,15 @@ async function renderCRMPage() {
                     <h4 class="font-bold text-xs">${l.title}</h4>
                     <p class="text-[10px] text-gray-400">${l.customer_name}</p>
                   </div>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold ${l.stage === 'Won' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-pink-500/20 pink-brand-text'}">${l.stage}</span>
+                  <div class="flex items-center gap-1">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${l.stage === 'Won' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-pink-500/20 pink-brand-text'}">${l.stage}</span>
+                    <button onclick='openEditLeadModal(${JSON.stringify(l).replace(/'/g, "&#39;")})' title="Edit Deal" class="p-1 text-gray-400 hover:text-white">
+                      <i data-lucide="pencil" class="w-3 h-3"></i>
+                    </button>
+                    <button onclick="deleteLeadPipeline(${l.id})" title="Delete Deal" class="p-1 text-red-400 hover:text-red-300">
+                      <i data-lucide="trash-2" class="w-3 h-3"></i>
+                    </button>
+                  </div>
                 </div>
                 <div class="flex justify-between items-center pt-1 border-t border-slate-800/60">
                   <p class="text-xs font-mono font-bold text-gray-200">${formatCurrency(l.value)}</p>
