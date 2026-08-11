@@ -4,7 +4,8 @@
 
 function formatCurrency(amount, currencySymbol = '$') {
   const val = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
-  return `${currencySymbol}${val.toFixed(2)}`;
+  const formatted = val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${currencySymbol}${formatted}`;
 }
 
 function generateCode(prefix = 'REF') {
