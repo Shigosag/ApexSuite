@@ -1,4 +1,5 @@
 const db = require('../database/connection');
+const { pool } = require('../database/connection');
 const bcrypt = require('bcryptjs');
 
 class CompanyController {
@@ -132,11 +133,24 @@ class CompanyController {
   }
 
   async deleteAccount(req, res) {
+    const client = await pool.connect();
     try {
-      await db.query('DELETE FROM companies WHERE id = $1', [req.user.company_id]);
-      res.json({ success: true, message: 'Company workspace deleted.' });
+      await client.query('BEGIN');
+      const companyId = req.user.company_id;
+
+      // Clean up sales items & orders before deleting products & company
+      await client.query('DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE branch_id IN (SELECT id FROM branches WHERE company_id = $1))', [companyId]);
+      await client.query('DELETE FROM orders WHERE branch_id IN (SELECT id FROM branches WHERE company_id = $1)', [companyId]);
+      await client.query('DELETE FROM products WHERE company_id = $1', [companyId]);
+      await client.query('DELETE FROM companies WHERE id = $1', [companyId]);
+
+      await client.query('COMMIT');
+      res.json({ success: true, message: 'Company workspace deleted successfully.' });
     } catch (err) {
+      await client.query('ROLLBACK');
       res.status(500).json({ success: false, error: err.message });
+    } finally {
+      client.release();
     }
   }
 }
