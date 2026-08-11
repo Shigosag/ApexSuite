@@ -14,7 +14,8 @@ function getCurrencySymbol() {
 
 function formatCurrency(amount) {
   const val = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
-  return `${getCurrencySymbol()}${val.toFixed(2)}`;
+  const formatted = val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${getCurrencySymbol()}${formatted}`;
 }
 
 function formatNetProfitHtml(amount) {
