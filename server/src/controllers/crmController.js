@@ -98,6 +98,28 @@ class CRMController {
     }
   }
 
+  async updateLead(req, res) {
+    const { id } = req.params;
+    const { title, value, stage } = req.body;
+    if (!title) return res.status(400).json({ success: false, error: 'Deal title is required.' });
+    try {
+      await db.query('UPDATE leads SET title = $1, value = $2, stage = $3 WHERE id = $4', [title, value || 0.0, stage || 'New', id]);
+      res.json({ success: true, message: 'Deal lead updated.' });
+    } catch (err) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  }
+
+  async deleteLead(req, res) {
+    const { id } = req.params;
+    try {
+      await db.query('DELETE FROM leads WHERE id = $1', [id]);
+      res.json({ success: true, message: 'Deal lead deleted.' });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  }
+
   async updateLeadStage(req, res) {
     const { lead_id, stage } = req.body;
     try {
