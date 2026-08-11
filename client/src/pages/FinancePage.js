@@ -92,7 +92,7 @@ async function renderFinancePage() {
         </div>
         <div>
           <label class="text-[10px] text-gray-400">Bill Amount *</label>
-          <input type="number" step="0.01" id="apAmount" placeholder="e.g. 1200.00 *" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
+          <input type="number" step="0.01" id="apAmount" placeholder="e.g. 1200.00 *" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs font-mono">
         </div>
         <div>
           <label class="text-[10px] text-gray-400">Due Date *</label>
@@ -113,6 +113,34 @@ async function renderFinancePage() {
       });
       closeModal();
       showToast('Supplier bill recorded in Accounts Payable.', 'success');
+      navigate('finance');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  window.openPayPayableModal = (ap) => {
+    openModal(`Settle Supplier Bill: ${ap.supplier_name || 'Vendor'}`, `
+      <form onsubmit="handlePayPayableSubmit(event, ${ap.id}, ${ap.amount})" class="space-y-3">
+        <div>
+          <label class="text-[10px] text-gray-400">Supplier Name</label>
+          <p class="font-bold text-xs text-white mt-0.5">${ap.supplier_name || 'Direct Vendor'}</p>
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400">Outstanding Bill Amount</label>
+          <p class="font-mono font-bold text-red-400 text-sm">${formatCurrency(ap.amount)}</p>
+        </div>
+        <button type="submit" class="w-full pink-btn py-2.5 rounded-xl font-bold text-xs mt-2">Confirm Payment & Deduct Cash</button>
+      </form>
+    `);
+  };
+
+  window.handlePayPayableSubmit = async (e, payableId, amount) => {
+    e.preventDefault();
+    try {
+      await apiService.payAccountPayable({ payable_id: payableId, amount });
+      closeModal();
+      showToast('Supplier bill paid and deducted from Cash account.', 'success');
       navigate('finance');
     } catch (err) {
       showToast(err.message, 'error');
@@ -251,15 +279,22 @@ async function renderFinancePage() {
           <div class="p-4 border-b border-slate-800 font-bold text-xs">Accounts Payable (Supplier Bills)</div>
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-800/60 uppercase text-gray-400">
-              <tr><th class="p-4">Supplier</th><th class="p-4 font-mono">Amount</th><th class="p-4">Due Date</th><th class="p-4">Status</th></tr>
+              <tr><th class="p-4">Supplier</th><th class="p-4 font-mono">Amount</th><th class="p-4">Due Date</th><th class="p-4">Status</th><th class="p-4 text-right">Action</th></tr>
             </thead>
             <tbody class="divide-y divide-slate-800">
-              ${accountsPayable.length === 0 ? '<tr><td colspan="4" class="p-4 text-center text-gray-500">No unpaid supplier bills.</td></tr>' : accountsPayable.map(ap => `
+              ${accountsPayable.length === 0 ? '<tr><td colspan="5" class="p-4 text-center text-gray-500">No unpaid supplier bills.</td></tr>' : accountsPayable.map(ap => `
                 <tr>
                   <td class="p-4 font-bold text-slate-200">${ap.supplier_name || 'Direct Vendor'}</td>
                   <td class="p-4 font-mono font-bold text-red-400">${formatCurrency(ap.amount)}</td>
                   <td class="p-4 font-mono text-gray-400">${ap.due_date}</td>
-                  <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400">${ap.status}</span></td>
+                  <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${ap.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">${ap.status}</span></td>
+                  <td class="p-4 text-right">
+                    ${ap.status !== 'Paid' ? `
+                      <button onclick='openPayPayableModal(${JSON.stringify(ap).replace(/'/g, "&#39;")})' class="px-2 py-1 rounded-lg bg-emerald-950 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-900 text-[11px] font-semibold">
+                        Settle Bill
+                      </button>
+                    ` : '<span class="text-[10px] text-gray-500 font-mono">Paid</span>'}
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
