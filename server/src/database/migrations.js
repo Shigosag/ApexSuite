@@ -186,7 +186,7 @@ async function runMigrations() {
     CREATE TABLE IF NOT EXISTS order_items (
       id SERIAL PRIMARY KEY,
       order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
-      product_id INTEGER REFERENCES products(id) ON DELETE RESTRICT,
+      product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
       quantity INTEGER NOT NULL,
       unit_price NUMERIC(12, 2) NOT NULL,
       subtotal NUMERIC(12, 2) NOT NULL
@@ -286,6 +286,10 @@ async function runMigrations() {
     -- Ensure missing columns exist on existing database instances
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS tags TEXT;
     ALTER TABLE branches ADD COLUMN IF NOT EXISTS branch_type VARCHAR(100) DEFAULT 'Regional Branch';
+
+    -- Fix FK RESTRICT constraint on order_items for existing PostgreSQL databases
+    ALTER TABLE order_items DROP CONSTRAINT IF EXISTS order_items_product_id_fkey;
+    ALTER TABLE order_items ADD CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;
 
     -- Performance Indexes
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
