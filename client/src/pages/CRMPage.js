@@ -1,379 +1,280 @@
-async function renderCRMPage() {
-  const [custRes, leadsRes] = await Promise.all([
+let posCart = [];
+
+async function renderPOSPage() {
+  const [prodRes, custRes, ordersRes] = await Promise.all([
+    apiService.getProducts().catch(() => ({ data: [] })),
     apiService.getCustomers().catch(() => ({ data: [] })),
-    apiService.getLeads().catch(() => ({ data: [] }))
+    apiService.getPOSOrders().catch(() => ({ data: [] }))
   ]);
 
+  const allProducts = prodRes.data || [];
   const customers = custRes.data || [];
-  const leads = leadsRes.data || [];
+  const recentOrders = ordersRes.data || [];
 
-  window.openNewCustomerModal = () => {
-    openModal('Register Client Account', `
-      <form onsubmit="handleCreateCustomer(event)" class="space-y-3">
-        <input type="text" id="cName" placeholder="Client Name *" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-        <input type="email" id="cEmail" placeholder="Email Address *" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-        <input type="text" id="cPhone" placeholder="Phone Number" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-        <input type="text" id="cCompany" placeholder="Company Name" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-        <select id="cSegment" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-          <option value="General">General</option>
-          <option value="VIP Enterprise">VIP Enterprise</option>
-          <option value="Wholesale">Wholesale</option>
-        </select>
-        <button type="submit" class="w-full pink-btn py-2.5 rounded-xl font-bold text-xs mt-2">Save Customer Profile</button>
-      </form>
-    `);
-  };
-
-  window.handleCreateCustomer = async (e) => {
-    e.preventDefault();
-    try {
-      await apiService.createCustomer({
-        name: document.getElementById('cName').value,
-        email: document.getElementById('cEmail').value,
-        phone: document.getElementById('cPhone').value,
-        company_name: document.getElementById('cCompany').value,
-        segment: document.getElementById('cSegment').value
-      });
-      closeModal();
-      showToast('Client account profile saved!', 'success');
-      navigate('crm');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  };
-
-  window.openEditCustomerModal = (c) => {
-    openModal(`Edit Customer Profile: ${c.name}`, `
-      <form onsubmit="handleUpdateCustomer(event, ${c.id})" class="space-y-3">
-        <div>
-          <label class="text-[10px] text-gray-400">Client Name *</label>
-          <input type="text" id="editCName" value="${c.name}" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-        </div>
-        <div>
-          <label class="text-[10px] text-gray-400">Email Address *</label>
-          <input type="email" id="editCEmail" value="${c.email}" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-        </div>
-        <div>
-          <label class="text-[10px] text-gray-400">Phone Number</label>
-          <input type="text" id="editCPhone" value="${c.phone || ''}" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-        </div>
-        <div>
-          <label class="text-[10px] text-gray-400">Company Name</label>
-          <input type="text" id="editCCompany" value="${c.company_name || ''}" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-        </div>
-        <div>
-          <label class="text-[10px] text-gray-400">Customer Segment</label>
-          <select id="editCSegment" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-            <option value="General" ${c.segment === 'General' ? 'selected' : ''}>General</option>
-            <option value="VIP Enterprise" ${c.segment === 'VIP Enterprise' ? 'selected' : ''}>VIP Enterprise</option>
-            <option value="Wholesale" ${c.segment === 'Wholesale' ? 'selected' : ''}>Wholesale</option>
-          </select>
-        </div>
-        <button type="submit" class="w-full pink-btn py-2.5 rounded-xl font-bold text-xs mt-2">Update Profile</button>
-      </form>
-    `);
-  };
-
-  window.handleUpdateCustomer = async (e, customerId) => {
-    e.preventDefault();
-    try {
-      await apiService.updateCustomer(customerId, {
-        name: document.getElementById('editCName').value,
-        email: document.getElementById('editCEmail').value,
-        phone: document.getElementById('editCPhone').value,
-        company_name: document.getElementById('editCCompany').value,
-        segment: document.getElementById('editCSegment').value
-      });
-      closeModal();
-      showToast('Customer profile updated!', 'success');
-      navigate('crm');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  };
-
-  window.openCustomerNotesModal = async (cId, cName) => {
-    try {
-      const res = await apiService.getCustomerNotes(cId);
-      const notes = res.data || [];
-
-      openModal(`Engagement Timeline: ${cName}`, `
-        <div class="space-y-4 max-w-lg">
-          <form onsubmit="handleSaveCustomerNote(event, ${cId}, '${cName.replace(/'/g, "\\'")}')" class="space-y-2 border-b border-slate-800 pb-4">
-            <label class="text-[10px] text-gray-400">Add Communication Note / Internal Activity</label>
-            <textarea id="noteContent" rows="3" placeholder="Enter notes regarding client meeting, call history, or requirements..." required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs focus:outline-none focus:border-[#f34b7d]"></textarea>
-            <button type="submit" class="pink-btn px-4 py-2 rounded-xl text-xs font-bold w-full">Save Engagement Note</button>
-          </form>
-
-          <div class="space-y-2 max-h-60 overflow-y-auto">
-            <h4 class="text-xs font-bold text-gray-400">Activity History (${notes.length})</h4>
-            ${notes.length === 0 ? '<p class="text-xs text-gray-500 py-3 text-center">No notes recorded for this customer.</p>' : notes.map(n => `
-              <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-800 space-y-1">
-                <div class="flex justify-between items-center text-[10px] text-gray-400">
-                  <span class="font-bold text-slate-300">${n.author_name || 'System Staff'}</span>
-                  <span>${new Date(n.created_at).toLocaleString()}</span>
-                </div>
-                <p class="text-xs text-gray-200 leading-relaxed">${n.content}</p>
+  window.filterPOSProducts = () => {
+    const query = document.getElementById('posSearch')?.value.toLowerCase().trim() || '';
+    const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query) || (p.barcode && p.barcode.includes(query)));
+    
+    const grid = document.getElementById('posGrid');
+    if (grid) {
+      grid.innerHTML = filtered.length === 0 
+        ? '<p class="text-xs text-gray-500 col-span-3 text-center py-8">No products match search query.</p>'
+        : filtered.map(p => `
+            <div onclick="addPOSItem(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.selling_price})" class="glass-panel p-4 rounded-xl border border-slate-800 hover:border-[#f34b7d] cursor-pointer transition-all space-y-2">
+              <div class="flex justify-between text-[10px] text-gray-400 font-mono">
+                <span>${p.sku}</span>
+                <span>Qty: ${p.current_stock}</span>
               </div>
-            `).join('')}
-          </div>
-        </div>
-      `, 'max-w-lg');
-    } catch (err) {
-      showToast('Failed to load customer notes: ' + err.message, 'error');
+              <h4 class="font-bold text-xs truncate">${p.name}</h4>
+              <p class="text-xs font-bold pink-brand-text font-mono">${formatCurrency(p.selling_price)}</p>
+            </div>
+          `).join('');
     }
   };
 
-  window.handleSaveCustomerNote = async (e, customerId, customerName) => {
-    e.preventDefault();
-    const content = document.getElementById('noteContent').value;
+  window.addPOSItem = (id, name, price) => {
+    const exist = posCart.find(i => i.product_id === id);
+    if (exist) {
+      exist.quantity += 1;
+    } else {
+      posCart.push({ product_id: id, name, unit_price: price, quantity: 1 });
+    }
+    updatePOSCartUI();
+  };
+
+  window.updatePOSQty = (id, change) => {
+    const item = posCart.find(i => i.product_id === id);
+    if (item) {
+      item.quantity += change;
+      if (item.quantity <= 0) {
+        posCart = posCart.filter(i => i.product_id !== id);
+      }
+    }
+    updatePOSCartUI();
+  };
+
+  window.clearPOSBasket = () => {
+    posCart = [];
+    updatePOSCartUI();
+    showToast('Basket cleared.', 'success');
+  };
+
+  window.downloadReceiptPDF = async (orderId) => {
     try {
-      await apiService.addCustomerNote(customerId, content);
-      showToast('Engagement note saved.', 'success');
-      openCustomerNotesModal(customerId, customerName);
+      await apiService.downloadReceiptBlob(orderId);
+      showToast('PDF Receipt generated successfully.', 'success');
     } catch (err) {
-      showToast(err.message, 'error');
+      showToast('Failed to download receipt PDF: ' + err.message, 'error');
     }
   };
 
-  window.deleteCustomerAccount = async (id) => {
-    if (!confirm('Are you sure you want to delete this customer profile?')) return;
-    try {
-      await apiService.deleteCustomer(id);
-      showToast('Customer profile deleted.', 'success');
-      navigate('crm');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  };
-
-  window.openNewLeadModal = () => {
-    if (customers.length === 0) {
-      openModal('Create Deal Pipeline', `
-        <div class="space-y-4 text-center py-2">
-          <div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs">
-            <p class="font-bold">No registered customers found.</p>
-            <p class="mt-1 text-[11px]">Please create a client account profile first before opening a deal pipeline.</p>
-          </div>
-          <button onclick="closeModal(); openNewCustomerModal();" class="pink-btn w-full py-2.5 rounded-xl font-bold text-xs">
-            + Add Customer Account First
-          </button>
-        </div>
-      `);
-      return;
-    }
-
-    openModal('Create Deal Pipeline', `
-      <form onsubmit="handleCreateLead(event)" class="space-y-3">
+  window.openRefundOrderModal = (orderId, orderNum, totalAmount) => {
+    openModal(`Order Refund: ${orderNum}`, `
+      <form onsubmit="handleRefundOrderSubmit(event, ${orderId})" class="space-y-3">
         <div>
-          <label class="text-[10px] text-gray-400">Select Customer Account *</label>
-          <select id="lCustId" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-            <option value="" disabled selected>-- Select Customer Account --</option>
-            ${customers.map(c => `<option value="${c.id}">${c.name} (${c.company_name || 'Individual'})</option>`).join('')}
-          </select>
+          <label class="text-[10px] text-gray-400">Order Number</label>
+          <p class="font-mono font-bold text-xs text-white">${orderNum}</p>
         </div>
         <div>
-          <label class="text-[10px] text-gray-400">Deal Title *</label>
-          <input type="text" id="lTitle" placeholder="e.g. Q4 Enterprise Contract *" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
+          <label class="text-[10px] text-gray-400">Refund Amount *</label>
+          <input type="number" step="0.01" id="refundAmount" value="${totalAmount}" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs font-mono">
         </div>
         <div>
-          <label class="text-[10px] text-gray-400">Expected Deal Value *</label>
-          <input type="number" step="0.01" id="lValue" placeholder="e.g. 5000 *" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
+          <label class="text-[10px] text-gray-400">Refund Reason *</label>
+          <input type="text" id="refundReason" placeholder="e.g. Returned damaged item" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
         </div>
-        <div>
-          <label class="text-[10px] text-gray-400">Pipeline Stage</label>
-          <select id="lStage" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-            <option value="New">New</option>
-            <option value="Contacted">Contacted</option>
-            <option value="Proposal">Proposal</option>
-            <option value="Won">Won</option>
-            <option value="Lost">Lost</option>
-          </select>
-        </div>
-        <button type="submit" class="w-full pink-btn py-2.5 rounded-xl font-bold text-xs mt-2">Create Deal Pipeline</button>
+        <button type="submit" class="w-full bg-red-950 hover:bg-red-900 border border-red-500/30 text-red-200 py-2.5 rounded-xl font-bold text-xs mt-2">Execute Order Refund</button>
       </form>
     `);
   };
 
-  window.handleCreateLead = async (e) => {
+  window.handleRefundOrderSubmit = async (e, orderId) => {
     e.preventDefault();
-    const custId = document.getElementById('lCustId').value;
-    if (!custId) {
-      return showToast('Please select a valid customer account.', 'error');
-    }
+    const amount = parseFloat(document.getElementById('refundAmount').value);
+    const reason = document.getElementById('refundReason').value;
 
     try {
-      await apiService.createLead({
-        customer_id: parseInt(custId, 10),
-        title: document.getElementById('lTitle').value,
-        value: parseFloat(document.getElementById('lValue').value),
-        stage: document.getElementById('lStage').value
-      });
+      await apiService.processPOSRefund(orderId, amount, reason);
       closeModal();
-      showToast('Deal lead pipeline created!', 'success');
-      navigate('crm');
+      showToast('Order refunded successfully.', 'success');
+      navigate('pos');
     } catch (err) {
       showToast(err.message, 'error');
     }
   };
 
-  window.openEditLeadModal = (l) => {
-    openModal(`Edit Deal: ${l.title}`, `
-      <form onsubmit="handleUpdateLead(event, ${l.id})" class="space-y-3">
-        <div>
-          <label class="text-[10px] text-gray-400">Deal Title *</label>
-          <input type="text" id="editLTitle" value="${l.title}" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-        </div>
-        <div>
-          <label class="text-[10px] text-gray-400">Expected Value *</label>
-          <input type="number" step="0.01" id="editLValue" value="${l.value}" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs font-mono">
-        </div>
-        <div>
-          <label class="text-[10px] text-gray-400">Pipeline Stage</label>
-          <select id="editLStage" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-            <option value="New" ${l.stage === 'New' ? 'selected' : ''}>New</option>
-            <option value="Contacted" ${l.stage === 'Contacted' ? 'selected' : ''}>Contacted</option>
-            <option value="Proposal" ${l.stage === 'Proposal' ? 'selected' : ''}>Proposal</option>
-            <option value="Won" ${l.stage === 'Won' ? 'selected' : ''}>Won</option>
-            <option value="Lost" ${l.stage === 'Lost' ? 'selected' : ''}>Lost</option>
-          </select>
-        </div>
-        <button type="submit" class="w-full pink-btn py-2.5 rounded-xl font-bold text-xs mt-2">Update Deal</button>
-      </form>
-    `);
-  };
+  window.checkoutPOS = async () => {
+    if (posCart.length === 0) {
+      return showToast('Basket is empty. Select products to checkout.', 'error');
+    }
+    const custId = document.getElementById('posCustomerSelect').value;
+    const pMethod = document.getElementById('posPayMethod').value;
+    const discount = parseFloat(document.getElementById('posDiscount').value) || 0;
 
-  window.handleUpdateLead = async (e, leadId) => {
-    e.preventDefault();
     try {
-      await apiService.updateLead(leadId, {
-        title: document.getElementById('editLTitle').value,
-        value: parseFloat(document.getElementById('editLValue').value),
-        stage: document.getElementById('editLStage').value
-      });
-      closeModal();
-      showToast('Deal updated!', 'success');
-      navigate('crm');
+      const res = await apiService.checkout(posCart, pMethod, discount, custId ? parseInt(custId, 10) : null);
+      showToast(`POS Order ${res.data.orderNum} completed!`, 'success');
+      
+      await downloadReceiptPDF(res.data.orderId);
+
+      posCart = [];
+      updatePOSCartUI();
+      navigate('pos');
     } catch (err) {
       showToast(err.message, 'error');
     }
   };
 
-  window.deleteLeadPipeline = async (leadId) => {
-    if (!confirm('Are you sure you want to delete this deal pipeline?')) return;
-    try {
-      await apiService.deleteLead(leadId);
-      showToast('Deal pipeline removed.', 'success');
-      navigate('crm');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  };
-
-  window.updateLeadStage = async (leadId, newStage) => {
-    try {
-      await apiService.updateLeadStage(leadId, newStage);
-      showToast(`Deal stage updated to ${newStage}`, 'success');
-      navigate('crm');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  };
+  setTimeout(() => updatePOSCartUI(), 50);
 
   return `
     <div class="space-y-6">
-      <div class="flex justify-between items-center">
-        <div>
-          <h2 class="text-xl font-bold">CRM & Client Relationships</h2>
-          <p class="text-xs text-gray-400">Customer profiles, segmentation, engagement logs, and active deal pipelines</p>
-        </div>
-        <div class="flex gap-2">
-          <button onclick="openNewCustomerModal()" class="pink-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
-            <i data-lucide="user-plus" class="w-4 h-4 text-white"></i> Add Customer
-          </button>
-          <button onclick="openNewLeadModal()" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
-            <i data-lucide="trending-up" class="w-4 h-4 pink-brand-text"></i> New Lead
-          </button>
-        </div>
-      </div>
-
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 glass-panel rounded-2xl border border-slate-800 overflow-hidden">
-          <div class="p-4 border-b border-slate-800 font-bold text-xs">Registered Customer Directory (${customers.length})</div>
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-800/60 uppercase text-gray-400">
-              <tr>
-                <th class="p-4">Customer Name</th>
-                <th class="p-4">Contact</th>
-                <th class="p-4">Segment</th>
-                <th class="p-4 font-mono">Orders</th>
-                <th class="p-4 font-mono">Total Spend</th>
-                <th class="p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800">
-              ${customers.length === 0 ? '<tr><td colspan="6" class="p-4 text-center text-gray-500">No client accounts found. Click "+ Add Customer" above to create one.</td></tr>' : customers.map(c => `
-                <tr>
-                  <td class="p-4">
-                    <p class="font-bold">${c.name}</p>
-                    <p class="text-[10px] text-gray-400">${c.company_name || 'Individual'}</p>
-                  </td>
-                  <td class="p-4">${c.email}<br><span class="text-[10px] text-gray-400">${c.phone || ''}</span></td>
-                  <td class="p-4"><span class="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 border border-slate-700 font-medium">${c.segment}</span></td>
-                  <td class="p-4 font-mono">${c.order_count || 0}</td>
-                  <td class="p-4 font-mono pink-brand-text font-bold">${formatCurrency(c.total_spent || 0)}</td>
-                  <td class="p-4 text-right space-x-1">
-                    <button onclick="openCustomerNotesModal(${c.id}, '${c.name.replace(/'/g, "\\'")}')" title="Timeline Notes" class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-pink-brand">
-                      Notes
-                    </button>
-                    <button onclick='openEditCustomerModal(${JSON.stringify(c).replace(/'/g, "&#39;")})' class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300">
-                      Edit
-                    </button>
-                    <button onclick="deleteCustomerAccount(${c.id})" class="p-1 rounded-lg bg-red-950/60 border border-red-500/30 text-red-400 hover:bg-red-900 inline-flex items-center">
-                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                    </button>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
+        <div class="lg:col-span-2 space-y-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-xl font-bold">Point-of-Sale Register</h2>
+              <p class="text-xs text-gray-400">Scan or search inventory items to populate customer basket</p>
+            </div>
+            <input type="text" id="posSearch" oninput="filterPOSProducts()" placeholder="Search product name or SKU..." class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs w-64 focus:outline-none focus:border-[#f34b7d]">
+          </div>
 
-        <div class="glass-panel p-4 rounded-2xl border border-slate-800 space-y-4">
-          <h3 class="font-bold text-xs border-b border-slate-800 pb-2">Active Deal Pipelines</h3>
-          <div class="space-y-3 max-h-[500px] overflow-y-auto">
-            ${leads.length === 0 ? '<p class="text-gray-500 text-center py-4 text-xs">No active deal leads.</p>' : leads.map(l => `
-              <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <h4 class="font-bold text-xs">${l.title}</h4>
-                    <p class="text-[10px] text-gray-400">${l.customer_name}</p>
-                  </div>
-                  <div class="flex items-center gap-1">
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${l.stage === 'Won' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-pink-500/20 pink-brand-text'}">${l.stage}</span>
-                    <button onclick='openEditLeadModal(${JSON.stringify(l).replace(/'/g, "&#39;")})' title="Edit Deal" class="p-1 text-gray-400 hover:text-white">
-                      <i data-lucide="pencil" class="w-3 h-3"></i>
-                    </button>
-                    <button onclick="deleteLeadPipeline(${l.id})" title="Delete Deal" class="p-1 text-red-400 hover:text-red-300">
-                      <i data-lucide="trash-2" class="w-3 h-3"></i>
-                    </button>
-                  </div>
+          <div id="posGrid" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            ${allProducts.map(p => `
+              <div onclick="addPOSItem(${p.id}, '${p.name.replace(/'/g, "\\'")}', ${p.selling_price})" class="glass-panel p-4 rounded-xl border border-slate-800 hover:border-[#f34b7d] cursor-pointer transition-all space-y-2">
+                <div class="flex justify-between text-[10px] text-gray-400 font-mono">
+                  <span>${p.sku}</span>
+                  <span>Qty: ${p.current_stock}</span>
                 </div>
-                <div class="flex justify-between items-center pt-1 border-t border-slate-800/60">
-                  <p class="text-xs font-mono font-bold text-gray-200">${formatCurrency(l.value)}</p>
-                  <select onchange="updateLeadStage(${l.id}, this.value)" class="bg-slate-800 border border-slate-700 text-[10px] rounded px-1.5 py-0.5">
-                    <option value="New" ${l.stage === 'New' ? 'selected' : ''}>New</option>
-                    <option value="Contacted" ${l.stage === 'Contacted' ? 'selected' : ''}>Contacted</option>
-                    <option value="Proposal" ${l.stage === 'Proposal' ? 'selected' : ''}>Proposal</option>
-                    <option value="Won" ${l.stage === 'Won' ? 'selected' : ''}>Won</option>
-                    <option value="Lost" ${l.stage === 'Lost' ? 'selected' : ''}>Lost</option>
-                  </select>
-                </div>
+                <h4 class="font-bold text-xs truncate">${p.name}</h4>
+                <p class="text-xs font-bold pink-brand-text font-mono">${formatCurrency(p.selling_price)}</p>
               </div>
             `).join('')}
           </div>
         </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between h-[600px]">
+          <div class="space-y-4">
+            <div class="border-b border-slate-800 pb-3 flex justify-between items-center">
+              <h3 class="font-bold text-xs">Checkout Cart</h3>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] pink-brand-text font-mono font-bold" id="cartCountBadge">0 items</span>
+                <button onclick="clearPOSBasket()" title="Clear Basket" class="text-[10px] text-gray-400 hover:text-red-400">Clear</button>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] text-gray-400">Select Customer Account</label>
+              <select id="posCustomerSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs">
+                <option value="">Walk-in Customer</option>
+                ${customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+              </select>
+            </div>
+
+            <div id="cartItemsList" class="space-y-2 text-xs divide-y divide-slate-800 max-h-52 overflow-y-auto"></div>
+          </div>
+
+          <div class="border-t border-slate-800 pt-3 space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[10px] text-gray-400">Discount Amount</label>
+                <input type="number" id="posDiscount" value="0" onchange="updatePOSCartUI()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-1.5 text-xs">
+              </div>
+              <div>
+                <label class="text-[10px] text-gray-400">Payment Type</label>
+                <select id="posPayMethod" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-1.5 text-xs">
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="space-y-1 text-xs font-mono">
+              <div class="flex justify-between text-gray-400"><span>Subtotal:</span><span id="posSubtotal">${formatCurrency(0)}</span></div>
+              <div class="flex justify-between text-gray-400"><span>Estimated Tax (7%):</span><span id="posTax">${formatCurrency(0)}</span></div>
+              <div class="flex justify-between font-bold text-sm text-white pt-1 border-t border-slate-800"><span>Grand Total:</span><span id="posGrandTotal" class="pink-brand-text">${formatCurrency(0)}</span></div>
+            </div>
+
+            <button onclick="checkoutPOS()" class="w-full pink-btn py-3 rounded-xl font-bold text-xs pink-glow">Complete Transaction</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent POS Transactions History -->
+      <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+        <div class="p-4 border-b border-slate-800 font-bold text-xs">Recent Branch Transactions</div>
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-800/60 uppercase text-gray-400">
+            <tr><th class="p-4">Order #</th><th class="p-4">Customer</th><th class="p-4">Cashier</th><th class="p-4">Method</th><th class="p-4">Status</th><th class="p-4 font-mono">Total</th><th class="p-4 text-right">Actions</th></tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800">
+            ${recentOrders.length === 0 ? '<tr><td colspan="7" class="p-4 text-center text-gray-500">No transaction logs recorded.</td></tr>' : recentOrders.map(o => {
+              const isIncomeEntry = o.order_number.startsWith('INC-');
+              const customerLabel = isIncomeEntry ? 'Direct Capital / Income Entry' : (o.customer_name || 'Walk-in Customer');
+
+              return `
+                <tr>
+                  <td class="p-4 font-mono font-bold">${o.order_number}</td>
+                  <td class="p-4">${customerLabel}</td>
+                  <td class="p-4 text-gray-400">${o.cashier_name || 'System Cashier'}</td>
+                  <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 border border-slate-700">${o.payment_method}</span></td>
+                  <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.status === 'Refunded' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}">${o.status || 'Completed'}</span></td>
+                  <td class="p-4 font-mono font-bold text-emerald-400">${formatCurrency(o.total_amount)}</td>
+                  <td class="p-4 text-right flex justify-end gap-1">
+                    ${o.status !== 'Refunded' && !isIncomeEntry ? `
+                      <button onclick="openRefundOrderModal(${o.id}, '${o.order_number}', ${o.total_amount})" class="px-2 py-1 rounded-lg bg-red-950/60 border border-red-500/30 hover:bg-red-900 text-[11px] font-semibold text-red-300">
+                        Refund
+                      </button>
+                    ` : ''}
+                    <button onclick="downloadReceiptPDF(${o.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
+                      <i data-lucide="file-text" class="w-3.5 h-3.5 pink-brand-text"></i> PDF
+                    </button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
       </div>
     </div>
   `;
+}
+
+function updatePOSCartUI() {
+  const container = document.getElementById('cartItemsList');
+  if (!container) return;
+
+  let subtotal = 0;
+  let totalQty = 0;
+
+  container.innerHTML = posCart.length === 0 
+    ? '<p class="text-gray-500 text-[11px] text-center py-4">No items added to basket.</p>'
+    : posCart.map(i => {
+        const line = i.unit_price * i.quantity;
+        subtotal += line;
+        totalQty += i.quantity;
+        return `
+          <div class="flex justify-between items-center py-1.5">
+            <div>
+              <p class="font-bold">${i.name}</p>
+              <p class="text-[10px] text-gray-400 font-mono">${formatCurrency(i.unit_price)} x ${i.quantity}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="font-mono font-bold">${formatCurrency(line)}</span>
+              <button onclick="updatePOSQty(${i.product_id}, -1)" class="w-5 h-5 rounded bg-slate-800 border border-slate-700 text-xs">-</button>
+              <button onclick="updatePOSQty(${i.product_id}, 1)" class="w-5 h-5 rounded bg-slate-800 border border-slate-700 text-xs">+</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+  const discount = parseFloat(document.getElementById('posDiscount')?.value) || 0;
+  const tax = Math.max(0, subtotal - discount) * 0.07;
+  const grandTotal = Math.max(0, subtotal - discount + tax);
+
+  if (document.getElementById('posSubtotal')) document.getElementById('posSubtotal').innerText = formatCurrency(subtotal);
+  if (document.getElementById('posTax')) document.getElementById('posTax').innerText = formatCurrency(tax);
+  if (document.getElementById('posGrandTotal')) document.getElementById('posGrandTotal').innerText = formatCurrency(grandTotal);
+  if (document.getElementById('cartCountBadge')) document.getElementById('cartCountBadge').innerText = `${totalQty} items`;
 }
