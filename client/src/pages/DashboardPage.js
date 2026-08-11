@@ -145,15 +145,20 @@ async function renderDashboardPage() {
         <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
           <h3 class="font-bold text-sm">Recent POS Transactions</h3>
           <div class="space-y-3 text-xs divide-y divide-slate-800/60 max-h-64 overflow-y-auto">
-            ${orders.length === 0 ? '<p class="text-gray-500 py-4 text-center">No transactions recorded.</p>' : orders.map(o => `
-              <div class="pt-2 flex justify-between items-center">
-                <div class="min-w-0">
-                  <p class="font-bold font-mono truncate">${o.order_number}</p>
-                  <p class="text-[10px] text-gray-400 truncate">${o.customer_name || 'Walk-in Customer'} • ${o.payment_method}</p>
+            ${orders.length === 0 ? '<p class="text-gray-500 py-4 text-center">No transactions recorded.</p>' : orders.map(o => {
+              const isIncomeEntry = o.order_number.startsWith('INC-');
+              const customerLabel = isIncomeEntry ? 'Direct Capital / Income Entry' : (o.customer_name || 'Walk-in Customer');
+
+              return `
+                <div class="pt-2 flex justify-between items-center">
+                  <div class="min-w-0">
+                    <p class="font-bold font-mono truncate">${o.order_number}</p>
+                    <p class="text-[10px] text-gray-400 truncate">${customerLabel} • ${o.payment_method}</p>
+                  </div>
+                  <span class="font-bold font-mono text-emerald-400 shrink-0 ml-2">${formatCurrency(o.total_amount)}</span>
                 </div>
-                <span class="font-bold font-mono text-emerald-400 shrink-0 ml-2">${formatCurrency(o.total_amount)}</span>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
       </div>
