@@ -10,6 +10,8 @@ router.delete('/customers/:id', authenticateToken, crmController.deleteCustomer)
 
 router.get('/leads', authenticateToken, crmController.getLeads);
 router.post('/leads', authenticateToken, crmController.createLead);
+router.put('/leads/:id', authenticateToken, crmController.updateLead);
+router.delete('/leads/:id', authenticateToken, crmController.deleteLead);
 router.patch('/leads/stage', authenticateToken, crmController.updateLeadStage);
 
 router.get('/notes/:customerId', authenticateToken, crmController.getNotes);
