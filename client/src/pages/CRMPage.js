@@ -145,10 +145,31 @@ async function renderCRMPage() {
     }
   };
 
-  window.deleteCustomerAccount = async (id) => {
-    if (!confirm('Are you sure you want to delete this customer profile?')) return;
+  window.openDeleteCustomerConfirmModal = (customerId) => {
+    const c = window.crmCustomersList.find(item => item.id === customerId);
+    const name = c ? c.name : 'Customer Account';
+
+    openModal('Confirm Customer Deletion', `
+      <div class="space-y-4">
+        <p class="text-xs text-gray-300 leading-relaxed">
+          Are you sure you want to delete customer profile <strong class="text-white">"${name}"</strong>?
+        </p>
+        <div class="flex gap-2 pt-2">
+          <button onclick="closeModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 py-2.5 rounded-xl text-xs font-bold text-gray-300">
+            Cancel
+          </button>
+          <button onclick="executeDeleteCustomer(${customerId})" class="flex-1 bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-200 py-2.5 rounded-xl font-bold text-xs">
+            Delete Profile
+          </button>
+        </div>
+      </div>
+    `);
+  };
+
+  window.executeDeleteCustomer = async (id) => {
     try {
       await apiService.deleteCustomer(id);
+      closeModal();
       showToast('Customer profile deleted.', 'success');
       navigate('crm');
     } catch (err) {
@@ -271,10 +292,31 @@ async function renderCRMPage() {
     }
   };
 
-  window.deleteLeadPipeline = async (leadId) => {
-    if (!confirm('Are you sure you want to delete this deal pipeline?')) return;
+  window.openDeleteLeadConfirmModal = (leadId) => {
+    const l = window.crmLeadsList.find(item => item.id === leadId);
+    const title = l ? l.title : 'Deal Pipeline';
+
+    openModal('Confirm Deal Deletion', `
+      <div class="space-y-4">
+        <p class="text-xs text-gray-300 leading-relaxed">
+          Are you sure you want to delete the deal pipeline <strong class="text-white">"${title}"</strong>?
+        </p>
+        <div class="flex gap-2 pt-2">
+          <button onclick="closeModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 py-2.5 rounded-xl text-xs font-bold text-gray-300">
+            Cancel
+          </button>
+          <button onclick="executeDeleteLead(${leadId})" class="flex-1 bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-200 py-2.5 rounded-xl font-bold text-xs">
+            Delete Pipeline
+          </button>
+        </div>
+      </div>
+    `);
+  };
+
+  window.executeDeleteLead = async (leadId) => {
     try {
       await apiService.deleteLead(leadId);
+      closeModal();
       showToast('Deal pipeline removed.', 'success');
       navigate('crm');
     } catch (err) {
@@ -341,7 +383,7 @@ async function renderCRMPage() {
                     <button onclick="openEditCustomerModalById(${c.id})" class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300">
                       Edit
                     </button>
-                    <button onclick="deleteCustomerAccount(${c.id})" class="p-1 rounded-lg bg-red-950/60 border border-red-500/30 text-red-400 hover:bg-red-900 inline-flex items-center">
+                    <button onclick="openDeleteCustomerConfirmModal(${c.id})" class="p-1 rounded-lg bg-red-950/60 border border-red-500/30 text-red-400 hover:bg-red-900 inline-flex items-center">
                       <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     </button>
                   </td>
@@ -366,7 +408,7 @@ async function renderCRMPage() {
                     <button onclick="openEditLeadModalById(${l.id})" title="Edit Deal" class="p-1 text-gray-400 hover:text-white">
                       <i data-lucide="pencil" class="w-3 h-3"></i>
                     </button>
-                    <button onclick="deleteLeadPipeline(${l.id})" title="Delete Deal" class="p-1 text-red-400 hover:text-red-300">
+                    <button onclick="openDeleteLeadConfirmModal(${l.id})" title="Delete Deal" class="p-1 text-red-400 hover:text-red-300">
                       <i data-lucide="trash-2" class="w-3 h-3"></i>
                     </button>
                   </div>
