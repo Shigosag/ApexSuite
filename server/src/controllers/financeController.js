@@ -148,6 +148,29 @@ class FinanceController {
     }
   }
 
+  async payAccountPayable(req, res) {
+    const { payable_id, amount } = req.body;
+    if (!payable_id || !amount) {
+      return res.status(400).json({ success: false, error: 'Payable ID and amount are required.' });
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+      await client.query("UPDATE accounts_payable SET status = 'Paid' WHERE id = $1", [payable_id]);
+      await client.query("UPDATE chart_of_accounts SET balance = balance - $1 WHERE code = '1000' AND company_id = $2", [amount, req.user.company_id]);
+      await client.query('COMMIT');
+
+      res.json({ success: true, message: 'Supplier bill paid and deducted from Cash account.' });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      res.status(400).json({ success: false, error: err.message });
+    } finally {
+      client.release();
+    }
+  }
+
   async getChartOfAccounts(req, res) {
     try {
       const accounts = await db.query('SELECT * FROM chart_of_accounts WHERE company_id = $1 ORDER BY code ASC', [req.user.company_id]);
