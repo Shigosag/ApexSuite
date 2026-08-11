@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="styles/main.css">
 </head>
-<body class="dark-theme h-full font-sans antialiased overflow-hidden flex flex-col">
+<body class="dark-theme h-screen w-screen overflow-hidden font-sans antialiased">
 
   <!-- Toast Notification Container -->
   <div id="toastContainer" class="fixed top-5 right-5 z-[100] space-y-2 pointer-events-none"></div>
@@ -87,11 +87,11 @@
   </div>
 
   <!-- Application Layout -->
-  <div id="appLayout" class="h-screen w-screen flex flex-col hidden overflow-hidden">
+  <div id="appLayout" class="h-screen w-screen flex flex-col overflow-hidden hidden">
     <div id="headerContainer" class="shrink-0 z-40"></div>
-    <div class="flex-1 flex min-h-0 overflow-hidden relative">
-      <div id="sidebarContainer" class="shrink-0 h-full z-30"></div>
-      <main id="mainView" class="flex-1 p-6 overflow-y-auto h-full min-w-0"></main>
+    <div class="flex-1 flex overflow-hidden relative">
+      <div id="sidebarContainer" class="shrink-0 h-full"></div>
+      <main id="mainView" class="flex-1 h-full p-6 overflow-y-auto"></main>
     </div>
   </div>
 
