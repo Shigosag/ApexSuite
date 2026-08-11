@@ -66,6 +66,7 @@ class APIService {
   payInvoice(data) { return this.request('/finance/invoices/pay', 'POST', data); }
   getAccountsPayable() { return this.request('/finance/accounts-payable'); }
   logAccountPayable(data) { return this.request('/finance/accounts-payable', 'POST', data); }
+  payAccountPayable(data) { return this.request('/finance/accounts-payable/pay', 'POST', data); }
   getChartOfAccounts() { return this.request('/finance/chart-of-accounts'); }
 
   getProducts() { return this.request('/inventory/products'); }
@@ -84,6 +85,8 @@ class APIService {
   deleteCustomer(id) { return this.request(`/crm/customers/${id}`, 'DELETE'); }
   getLeads() { return this.request('/crm/leads'); }
   createLead(data) { return this.request('/crm/leads', 'POST', data); }
+  updateLead(id, data) { return this.request(`/crm/leads/${id}`, 'PUT', data); }
+  deleteLead(id) { return this.request(`/crm/leads/${id}`, 'DELETE'); }
   updateLeadStage(leadId, stage) { return this.request('/crm/leads/stage', 'PATCH', { lead_id: leadId, stage }); }
   getCustomerNotes(customerId) { return this.request(`/crm/notes/${customerId}`); }
   addCustomerNote(customerId, content) { return this.request('/crm/notes', 'POST', { customer_id: customerId, content }); }
