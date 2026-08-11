@@ -19,7 +19,12 @@ class POSController {
   async getOrders(req, res) {
     try {
       const orders = await db.query(`
-        SELECT o.*, c.name as customer_name, u.name as cashier_name
+        SELECT o.*,
+          CASE
+            WHEN o.order_number LIKE 'INC-%' THEN 'Direct Capital / Income Entry'
+            ELSE COALESCE(c.name, 'Walk-in Customer')
+          END as customer_name,
+          u.name as cashier_name
         FROM orders o
         LEFT JOIN customers c ON o.customer_id = c.id
         LEFT JOIN users u ON o.cashier_id = u.id
@@ -63,7 +68,6 @@ class POSController {
       const invoiceRes = await db.query('SELECT * FROM invoices WHERE order_id = $1', [req.params.orderId]);
       const invoice = invoiceRes.rows[0] || { invoice_number: `INV-${order.id}`, status: 'Paid', amount_due: order.total_amount };
 
-      // Resolve generateInvoicePDF at call time to prevent circular dependency issues
       pdfService.generateInvoicePDF({ ...order, items: itemsRes.rows }, invoice, res);
     } catch (err) {
       if (!res.headersSent) {
