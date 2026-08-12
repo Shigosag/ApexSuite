@@ -85,8 +85,8 @@ function renderHeader() {
             <span id="notifBadgeCounter" class="hidden absolute -top-1.5 -right-1.5 bg-[#f34b7d] text-white text-[9px] font-bold font-mono px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-lg">0</span>
           </button>
 
-          <!-- Anchored Popover -->
-          <div id="notifPopover" class="hidden absolute left-0 top-full mt-2 w-80 max-w-[90vw] glass-panel p-4 rounded-2xl border border-slate-700 shadow-2xl space-y-3 z-50">
+          <!-- Anchored Popover: Left on Mobile, Right on Desktop -->
+          <div id="notifPopover" class="hidden absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-80 max-w-[90vw] glass-panel p-4 rounded-2xl border border-slate-700 shadow-2xl space-y-3 z-50">
             <div class="flex justify-between items-center border-b border-slate-800 pb-2">
               <h4 class="font-bold text-xs text-white">System Notifications</h4>
               <button onclick="markAllNotificationsRead()" class="text-[10px] pink-brand-text hover:underline">Mark all read</button>
