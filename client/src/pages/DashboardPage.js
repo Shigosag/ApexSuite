@@ -1,11 +1,13 @@
 async function renderDashboardPage() {
-  const [summaryRes, ordersRes] = await Promise.all([
+  const [summaryRes, ordersRes, productsRes] = await Promise.all([
     apiService.getFinanceSummary().catch(() => ({ data: { revenue: 0, expenses: 0, net_profit: 0, accounts_receivable: 0 } })),
-    apiService.getPOSOrders().catch(() => ({ data: [] }))
+    apiService.getPOSOrders().catch(() => ({ data: [] })),
+    apiService.getProducts().catch(() => ({ data: [] }))
   ]);
 
   const d = summaryRes.data || { revenue: 0, expenses: 0, net_profit: 0, accounts_receivable: 0 };
   const orders = ordersRes.data || [];
+  const products = productsRes.data || [];
   const currSym = getCurrencySymbol();
 
   const netIncomeVal = d.net_profit || 0;
@@ -25,6 +27,9 @@ async function renderDashboardPage() {
     ? `-${formatCurrency(Math.abs(netIncomeVal))}` 
     : formatCurrency(netIncomeVal);
   const formattedAR = formatCurrency(d.accounts_receivable || 0);
+
+  const lowStockItems = products.filter(p => p.is_low_stock || p.current_stock <= p.min_stock_alert);
+  const topProducts = [...products].sort((a, b) => (b.selling_price * b.current_stock) - (a.selling_price * a.current_stock)).slice(0, 4);
 
   const currentMonthIdx = new Date().getMonth();
   const revenueSeries = Array(12).fill(0);
@@ -108,6 +113,7 @@ async function renderDashboardPage() {
         </button>
       </div>
 
+      <!-- Top KPI Cards Row -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="glass-panel p-4 lg:p-5 rounded-2xl border border-slate-800 flex flex-col justify-between overflow-hidden min-w-0">
           <p class="text-xs text-gray-400 font-medium truncate">Total Revenue</p>
@@ -134,6 +140,7 @@ async function renderDashboardPage() {
         </div>
       </div>
 
+      <!-- Middle Main Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 glass-panel p-5 rounded-2xl border border-slate-800">
           <h3 class="font-bold text-sm mb-4">Financial Growth & Operating Trend</h3>
@@ -159,6 +166,73 @@ async function renderDashboardPage() {
                 </div>
               `;
             }).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- NEW Bottom Executive Analytics Row (Fills Bottom Space) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Widget 1: Top Valued Inventory -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+          <h4 class="font-bold text-xs text-gray-300 flex items-center justify-between">
+            <span>Top Inventory Asset Value</span>
+            <i data-lucide="package" class="w-4 h-4 pink-brand-text"></i>
+          </h4>
+          <div class="space-y-2 text-xs divide-y divide-slate-800/50">
+            ${topProducts.length === 0 ? '<p class="text-gray-500 py-2">No inventory data.</p>' : topProducts.map(p => `
+              <div class="pt-2 flex justify-between items-center">
+                <div class="min-w-0">
+                  <p class="font-bold truncate">${p.name}</p>
+                  <p class="text-[10px] text-gray-400 font-mono">${p.current_stock} units in stock</p>
+                </div>
+                <span class="font-bold font-mono pink-brand-text">${formatCurrency(p.selling_price * p.current_stock)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Widget 2: Stock Risk & Restock Radar -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+          <h4 class="font-bold text-xs text-gray-300 flex items-center justify-between">
+            <span>Inventory Health & Risk Radar</span>
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+          </h4>
+          <div class="space-y-2 text-xs divide-y divide-slate-800/50">
+            ${lowStockItems.length === 0 ? '<p class="text-emerald-400 font-semibold py-2">✓ All inventory operating at optimal stock levels.</p>' : lowStockItems.map(p => `
+              <div class="pt-2 flex justify-between items-center">
+                <div class="min-w-0">
+                  <p class="font-bold text-red-400 truncate">${p.name}</p>
+                  <p class="text-[10px] text-gray-400 font-mono">Min alert threshold: ${p.min_stock_alert}</p>
+                </div>
+                <span class="font-bold font-mono text-red-400 bg-red-500/10 px-2 py-0.5 rounded">${p.current_stock} left</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Widget 3: Executive Action Shortcuts -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
+          <h4 class="font-bold text-xs text-gray-300 flex items-center justify-between">
+            <span>Quick Action Command Hub</span>
+            <i data-lucide="zap" class="w-4 h-4 text-emerald-400"></i>
+          </h4>
+          <div class="grid grid-cols-2 gap-2 text-xs pt-1">
+            <button onclick="navigate('pos')" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left font-semibold space-y-1">
+              <i data-lucide="shopping-cart" class="w-4 h-4 pink-brand-text"></i>
+              <p class="text-[11px]">POS Terminal</p>
+            </button>
+            <button onclick="navigate('crm')" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left font-semibold space-y-1">
+              <i data-lucide="user-plus" class="w-4 h-4 text-emerald-400"></i>
+              <p class="text-[11px]">Add Customer</p>
+            </button>
+            <button onclick="navigate('inventory')" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left font-semibold space-y-1">
+              <i data-lucide="plus-circle" class="w-4 h-4 text-blue-400"></i>
+              <p class="text-[11px]">Add Product</p>
+            </button>
+            <button onclick="navigate('finance')" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left font-semibold space-y-1">
+              <i data-lucide="file-text" class="w-4 h-4 text-amber-400"></i>
+              <p class="text-[11px]">Log Expense</p>
+            </button>
           </div>
         </div>
       </div>
