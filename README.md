@@ -129,11 +129,11 @@ ApexSuite-Monorepo/
 
 | Executive Overview Dashboard | POS Register Terminal |
 | :---: | :---: |
-| ![Dashboard](docs/screenshots/dashboard.png) | ![POS Checkout](docs/screenshots/pos.png) |
+| ![Dashboard](docs/screenshots/apexsuite_01_dashboard.png) | ![POS Checkout](docs/screenshots/apexsuite_04_pos.png) |
 
 | Finance & General Ledger | CRM & Engagement Timeline |
 | :---: | :---: |
-| ![Finance Ledger](docs/screenshots/finance.png) | ![CRM Pipeline](docs/screenshots/crm.png) |
+| ![Finance Ledger](docs/screenshots/apexsuite_05_finance.png) | ![CRM Pipeline](docs/screenshots/apexsuite_02_crm.png) |
 
 ---
 
