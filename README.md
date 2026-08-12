@@ -14,7 +14,7 @@ Brand Accent: `#f34b7d`
 
 ## 🌐 Live URL
 🚀 **Visit ApexSuite Enterprise:**  
-https://apexsuite.vercel.app
+https://apexsuite-64hxc.faable.link
 
 ---
 
