@@ -10,6 +10,18 @@ async function renderCRMPage() {
   const customers = window.crmCustomersList;
   const leads = window.crmLeadsList;
 
+  const getStageBadgeHtml = (stage) => {
+    const styles = {
+      'Won': 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+      'Lost': 'bg-red-500/20 text-red-400 border-red-500/30',
+      'Proposal': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      'Contacted': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      'New': 'bg-pink-500/20 pink-brand-text border-pink-500/30'
+    };
+    const badgeStyle = styles[stage] || 'bg-slate-800 text-slate-300';
+    return `<span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeStyle}">${stage}</span>`;
+  };
+
   window.openNewCustomerModal = () => {
     openModal('Register Client Account', `
       <form onsubmit="handleCreateCustomer(event)" class="space-y-3">
@@ -404,7 +416,7 @@ async function renderCRMPage() {
                     <p class="text-[10px] text-gray-400">${l.customer_name}</p>
                   </div>
                   <div class="flex items-center gap-1">
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${l.stage === 'Won' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-pink-500/20 pink-brand-text'}">${l.stage}</span>
+                    ${getStageBadgeHtml(l.stage)}
                     <button onclick="openEditLeadModalById(${l.id})" title="Edit Deal" class="p-1 text-gray-400 hover:text-white">
                       <i data-lucide="pencil" class="w-3 h-3"></i>
                     </button>
