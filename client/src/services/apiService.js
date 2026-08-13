@@ -71,11 +71,14 @@ class APIService {
 
   getProducts() { return this.request('/inventory/products'); }
   createProduct(data) { return this.request('/inventory/products', 'POST', data); }
+  updateProduct(id, data) { return this.request(`/inventory/products/${id}`, 'PUT', data); }
   deleteProduct(id) { return this.request(`/inventory/products/${id}`, 'DELETE'); }
   adjustStock(data) { return this.request('/inventory/stock-adjust', 'POST', data); }
   transferStock(data) { return this.request('/inventory/stock-transfer', 'POST', data); }
   getCategories() { return this.request('/inventory/categories'); }
   createCategory(data) { return this.request('/inventory/categories', 'POST', data); }
+  updateCategory(id, data) { return this.request(`/inventory/categories/${id}`, 'PUT', data); }
+  deleteCategory(id) { return this.request(`/inventory/categories/${id}`, 'DELETE'); }
   getSuppliers() { return this.request('/inventory/suppliers'); }
   createSupplier(data) { return this.request('/inventory/suppliers', 'POST', data); }
 
