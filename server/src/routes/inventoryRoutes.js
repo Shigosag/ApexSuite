@@ -18,5 +18,7 @@ router.delete('/categories/:id', authenticateToken, requireRole(['Admin', 'Manag
 
 router.get('/suppliers', authenticateToken, inventoryController.getSuppliers);
 router.post('/suppliers', authenticateToken, requireRole(['Admin', 'Manager']), inventoryController.createSupplier);
+router.put('/suppliers/:id', authenticateToken, requireRole(['Admin', 'Manager']), inventoryController.updateSupplier);
+router.delete('/suppliers/:id', authenticateToken, requireRole(['Admin', 'Manager']), inventoryController.deleteSupplier);
 
 module.exports = router;
