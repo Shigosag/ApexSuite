@@ -8,6 +8,7 @@ async function renderFinancePage() {
   ]);
 
   const summary = summaryRes.data || { revenue: 0, expenses: 0, net_profit: 0, accounts_receivable: 0, accounts_payable: 0 };
+  const expenses = expRes.data || [];
   const coa = coaRes.data || [];
   const invoices = invRes.data || [];
   const accountsPayable = apRes.data || [];
@@ -20,6 +21,43 @@ async function renderFinancePage() {
   const formattedNetProfit = netProfitVal < 0 
     ? `-${formatCurrency(Math.abs(netProfitVal))}` 
     : formatCurrency(netProfitVal);
+
+  // Group Expenses by Category for Chart.js
+  const expCategoryMap = {};
+  expenses.forEach(e => {
+    const cat = e.category || 'General';
+    expCategoryMap[cat] = (expCategoryMap[cat] || 0) + (parseFloat(e.amount) || 0);
+  });
+  const expCatLabels = Object.keys(expCategoryMap);
+  const expCatData = Object.values(expCategoryMap);
+
+  setTimeout(() => {
+    const ctx = document.getElementById('expenseCategoryChart');
+    if (ctx && typeof Chart !== 'undefined' && expCatLabels.length > 0) {
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: expCatLabels,
+          datasets: [{
+            data: expCatData,
+            backgroundColor: ['#f34b7d', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#64748b'],
+            borderColor: '#0f172a',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: '#94a3b8', font: { size: 10 }, usePointStyle: true }
+            }
+          }
+        }
+      });
+    }
+  }, 100);
 
   window.openLogIncomeModal = () => {
     openModal('Record Sales Income', `
@@ -212,6 +250,7 @@ async function renderFinancePage() {
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- P&L Statement -->
         <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
           <h3 class="font-bold text-xs border-b border-slate-800 pb-2">P&L Profitability Statement</h3>
           <div class="space-y-2 text-xs">
@@ -223,19 +262,30 @@ async function renderFinancePage() {
           </div>
         </div>
 
-        <div class="lg:col-span-2 glass-panel rounded-2xl border border-slate-800 overflow-hidden">
+        <!-- Expense Category Breakdown Chart -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+          <h3 class="font-bold text-xs border-b border-slate-800 pb-2 flex justify-between items-center">
+            <span>Operating Expense Distribution</span>
+            <i data-lucide="pie-chart" class="w-4 h-4 pink-brand-text"></i>
+          </h3>
+          <div class="h-44 relative mt-2">
+            ${expCatLabels.length === 0 ? '<p class="text-xs text-gray-500 text-center pt-16">No logged expenses.</p>' : '<canvas id="expenseCategoryChart"></canvas>'}
+          </div>
+        </div>
+
+        <!-- Chart of Accounts -->
+        <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
           <div class="p-4 border-b border-slate-800 font-bold text-xs">General Chart of Accounts</div>
           <table class="w-full text-left text-xs">
             <thead class="bg-slate-800/60 uppercase text-gray-400">
-              <tr><th class="p-4">Account Code</th><th class="p-4">Account Name</th><th class="p-4">Type</th><th class="p-4 font-mono">Current Balance</th></tr>
+              <tr><th class="p-3">Code</th><th class="p-3">Account Name</th><th class="p-3 font-mono">Balance</th></tr>
             </thead>
             <tbody class="divide-y divide-slate-800">
               ${coa.map(a => `
                 <tr>
-                  <td class="p-4 font-mono font-bold">${a.code}</td>
-                  <td class="p-4 font-medium">${a.name}</td>
-                  <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 border border-slate-700">${a.type}</span></td>
-                  <td class="p-4 font-mono font-bold">${formatCurrency(a.balance)}</td>
+                  <td class="p-3 font-mono font-bold">${a.code}</td>
+                  <td class="p-3 font-medium truncate">${a.name}</td>
+                  <td class="p-3 font-mono font-bold">${formatCurrency(a.balance)}</td>
                 </tr>
               `).join('')}
             </tbody>
