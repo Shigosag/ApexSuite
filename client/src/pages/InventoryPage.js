@@ -10,6 +10,46 @@ async function renderInventoryPage() {
   const branches = branchRes.data || [];
   const categories = catRes.data || [];
   const suppliers = supRes.data || [];
+  const currSym = getCurrencySymbol();
+
+  // Group Stock Asset Value by Category for Chart.js Bar Chart
+  const catValueMap = {};
+  products.forEach(p => {
+    const cat = p.category_name || 'General';
+    const val = (parseFloat(p.selling_price) || 0) * (parseInt(p.current_stock, 10) || 0);
+    catValueMap[cat] = (catValueMap[cat] || 0) + val;
+  });
+  const invCatLabels = Object.keys(catValueMap);
+  const invCatData = Object.values(catValueMap);
+
+  setTimeout(() => {
+    const ctx = document.getElementById('inventoryAssetChart');
+    if (ctx && typeof Chart !== 'undefined' && invCatLabels.length > 0) {
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: invCatLabels,
+          datasets: [{
+            label: `Asset Value (${currSym})`,
+            data: invCatData,
+            backgroundColor: '#f34b7d',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+            y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255, 255, 255, 0.05)' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+  }, 100);
 
   window.switchInventoryTab = (tab) => {
     document.querySelectorAll('.inv-tab-content').forEach(el => el.classList.add('hidden'));
@@ -235,6 +275,17 @@ async function renderInventoryPage() {
           <button onclick="openNewProductModal()" class="pink-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
             <i data-lucide="plus-circle" class="w-4 h-4 text-white"></i> Add Product
           </button>
+        </div>
+      </div>
+
+      <!-- Top Section: Inventory Asset Value Bar Chart -->
+      <div class="glass-panel p-5 rounded-2xl border border-slate-800">
+        <h3 class="font-bold text-xs border-b border-slate-800 pb-2 mb-3 flex justify-between items-center">
+          <span>Inventory Asset Value Distribution by Category</span>
+          <i data-lucide="bar-chart-2" class="w-4 h-4 pink-brand-text"></i>
+        </h3>
+        <div class="h-40 relative">
+          ${invCatLabels.length === 0 ? '<p class="text-xs text-gray-500 text-center pt-16">No inventory products found.</p>' : '<canvas id="inventoryAssetChart"></canvas>'}
         </div>
       </div>
 
