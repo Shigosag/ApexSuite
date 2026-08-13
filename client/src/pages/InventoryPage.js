@@ -338,6 +338,61 @@ async function renderInventoryPage() {
     }
   };
 
+  window.openEditSupplierModalById = (supId) => {
+    const s = window.invSuppliersList.find(item => item.id === supId);
+    if (!s) return;
+
+    openModal(`Edit Supplier Profile: ${s.name}`, `
+      <form onsubmit="handleUpdateSupplierSubmit(event, ${s.id})" class="space-y-3">
+        <div>
+          <label class="text-[10px] text-gray-400">Supplier Company Name *</label>
+          <input type="text" id="editSupName" value="${s.name || ''}" required class="w-full mt-0.5 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs">
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400">Contact Person Name</label>
+          <input type="text" id="editSupContact" value="${s.contact_name || ''}" class="w-full mt-0.5 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs">
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400">Email Address</label>
+          <input type="email" id="editSupEmail" value="${s.email || ''}" class="w-full mt-0.5 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs">
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400">Phone Number</label>
+          <input type="text" id="editSupPhone" value="${s.phone || ''}" class="w-full mt-0.5 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs font-mono">
+        </div>
+        <button type="submit" class="w-full pink-btn py-2.5 rounded-xl font-bold text-xs mt-2">Update Supplier Profile</button>
+      </form>
+    `);
+  };
+
+  window.handleUpdateSupplierSubmit = async (e, supId) => {
+    e.preventDefault();
+    try {
+      await apiService.updateSupplier(supId, {
+        name: document.getElementById('editSupName').value,
+        contact_name: document.getElementById('editSupContact').value,
+        email: document.getElementById('editSupEmail').value,
+        phone: document.getElementById('editSupPhone').value
+      });
+      closeModal();
+      showToast('Supplier profile updated!', 'success');
+      navigate('inventory');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  window.deleteSupplierItem = async (supId) => {
+    if (!confirm('Are you sure you want to delete this supplier profile?')) return;
+    try {
+      await apiService.deleteSupplier(supId);
+      showToast('Supplier profile deleted.', 'success');
+      navigate('inventory');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
   window.openStockTransferModal = (prodId) => {
     const p = window.invProductsList.find(item => item.id === prodId);
     const prodName = p ? p.name : 'Product';
@@ -500,15 +555,23 @@ async function renderInventoryPage() {
         </div>
         <table class="w-full text-left text-xs">
           <thead class="bg-slate-800/60 uppercase text-gray-400">
-            <tr><th class="p-4">Supplier Name</th><th class="p-4">Contact Person</th><th class="p-4">Email</th><th class="p-4">Phone</th></tr>
+            <tr><th class="p-4">Supplier Name</th><th class="p-4">Contact Person</th><th class="p-4">Email</th><th class="p-4">Phone</th><th class="p-4 text-right">Actions</th></tr>
           </thead>
           <tbody class="divide-y divide-slate-800">
-            ${suppliers.length === 0 ? '<tr><td colspan="4" class="p-4 text-center text-gray-500">No suppliers registered.</td></tr>' : suppliers.map(s => `
+            ${suppliers.length === 0 ? '<tr><td colspan="5" class="p-4 text-center text-gray-500">No suppliers registered.</td></tr>' : suppliers.map(s => `
               <tr>
                 <td class="p-4 font-bold text-slate-200">${s.name}</td>
                 <td class="p-4 text-gray-400">${s.contact_name || 'N/A'}</td>
                 <td class="p-4 text-gray-400">${s.email || 'N/A'}</td>
                 <td class="p-4 font-mono text-gray-400">${s.phone || 'N/A'}</td>
+                <td class="p-4 text-right space-x-1">
+                  <button onclick="openEditSupplierModalById(${s.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300">
+                    Edit
+                  </button>
+                  <button onclick="deleteSupplierItem(${s.id})" class="p-1 rounded-lg bg-red-950/60 border border-red-500/30 text-red-400 hover:bg-red-900 inline-flex items-center">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </td>
               </tr>
             `).join('')}
           </tbody>
