@@ -204,33 +204,48 @@ async function renderPOSPage() {
       <!-- Recent POS Transactions History -->
       <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
         <div class="p-4 border-b border-slate-800 font-bold text-xs">Recent Branch Transactions</div>
-        <table class="w-full text-left text-xs">
-          <thead class="bg-slate-800/60 uppercase text-gray-400">
-            <tr><th class="p-4">Order #</th><th class="p-4">Customer</th><th class="p-4">Cashier</th><th class="p-4">Method</th><th class="p-4">Status</th><th class="p-4 font-mono">Total</th><th class="p-4 text-right">Actions</th></tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800">
-            ${recentOrders.length === 0 ? '<tr><td colspan="7" class="p-4 text-center text-gray-500">No transaction logs recorded.</td></tr>' : recentOrders.map(o => `
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-800/60 uppercase text-gray-400">
               <tr>
-                <td class="p-4 font-mono font-bold">${o.order_number}</td>
-                <td class="p-4">${o.customer_name || 'Walk-in Customer'}</td>
-                <td class="p-4 text-gray-400">${o.cashier_name || 'System Cashier'}</td>
-                <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 border border-slate-700">${o.payment_method}</span></td>
-                <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.status === 'Refunded' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}">${o.status || 'Completed'}</span></td>
-                <td class="p-4 font-mono font-bold text-emerald-400">${formatCurrency(o.total_amount)}</td>
-                <td class="p-4 text-right flex justify-end gap-1">
-                  ${o.status !== 'Refunded' ? `
-                    <button onclick="openRefundOrderModal(${o.id}, '${o.order_number}', ${o.total_amount})" class="px-2 py-1 rounded-lg bg-red-950/60 border border-red-500/30 hover:bg-red-900 text-[11px] font-semibold text-red-300">
-                      Refund
-                    </button>
-                  ` : ''}
-                  <button onclick="downloadReceiptPDF(${o.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
-                    <i data-lucide="file-text" class="w-3.5 h-3.5 pink-brand-text"></i> PDF
-                  </button>
-                </td>
+                <th class="p-4">Order #</th>
+                <th class="p-4">Customer</th>
+                <th class="p-4">Cashier</th>
+                <th class="p-4">Method</th>
+                <th class="p-4">Status</th>
+                <th class="p-4 font-mono">Total</th>
+                <th class="p-4 text-right pr-6 min-w-[170px]">Actions</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+              ${recentOrders.length === 0 ? '<tr><td colspan="7" class="p-4 text-center text-gray-500">No transaction logs recorded.</td></tr>' : recentOrders.map(o => {
+                const isIncomeEntry = o.order_number.startsWith('INC-');
+                const customerLabel = isIncomeEntry ? 'Direct Capital / Income Entry' : (o.customer_name || 'Walk-in Customer');
+
+                return `
+                  <tr>
+                    <td class="p-4 font-mono font-bold">${o.order_number}</td>
+                    <td class="p-4">${customerLabel}</td>
+                    <td class="p-4 text-gray-400">${o.cashier_name || 'System Cashier'}</td>
+                    <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 border border-slate-700">${o.payment_method}</span></td>
+                    <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${o.status === 'Refunded' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}">${o.status || 'Completed'}</span></td>
+                    <td class="p-4 font-mono font-bold text-emerald-400">${formatCurrency(o.total_amount)}</td>
+                    <td class="p-4 text-right pr-6 min-w-[170px] whitespace-nowrap space-x-1">
+                      ${o.status !== 'Refunded' && !isIncomeEntry ? `
+                        <button onclick="openRefundOrderModal(${o.id}, '${o.order_number}', ${o.total_amount})" class="px-2 py-1 rounded-lg bg-red-950/60 border border-red-500/30 hover:bg-red-900 text-[11px] font-semibold text-red-300 inline-flex items-center">
+                          Refund
+                        </button>
+                      ` : ''}
+                      <button onclick="downloadReceiptPDF(${o.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300 inline-flex items-center gap-1.5">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5 pink-brand-text"></i> PDF
+                      </button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   `;
