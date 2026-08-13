@@ -6,6 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
   lucide.createIcons();
 });
 
+window.addEventListener('hashchange', () => {
+  const page = window.location.hash.replace('#', '');
+  if (page && page !== window.currentActivePage) {
+    navigate(page);
+  }
+});
+
 function getCurrencySymbol() {
   const curr = localStorage.getItem('apex_currency') || 'USD';
   const symbols = { 'USD': '$', 'NGN': '₦', 'GBP': '£', 'EUR': '€', 'CAD': 'C$' };
@@ -96,7 +103,7 @@ function openResetPasswordModal() {
         <label class="text-xs text-gray-400">New Password *</label>
         <input type="password" id="resetNewPass" placeholder="••••••••" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
       </div>
-      <button type="submit" class="w-full pink-btn py-2.5 rounded-xl font-bold text-xs">Update Password</button>
+      <button type="submit" class="pink-btn py-2.5 rounded-xl font-bold text-xs w-full">Update Password</button>
     </form>
   `);
 }
@@ -180,8 +187,14 @@ function bootApp() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appLayout').classList.remove('hidden');
   document.getElementById('headerContainer').innerHTML = renderHeader();
-  document.getElementById('sidebarContainer').innerHTML = renderSidebar('dashboard');
-  navigate('dashboard');
+
+  // Restore current page from URL hash or localStorage upon refresh
+  const hashPage = window.location.hash.replace('#', '');
+  const savedPage = localStorage.getItem('apex_current_page') || 'dashboard';
+  const startPage = hashPage || savedPage;
+
+  document.getElementById('sidebarContainer').innerHTML = renderSidebar(startPage);
+  navigate(startPage);
 }
 
 function logout() {
@@ -218,6 +231,8 @@ function closeModal() {
 
 async function navigate(page) {
   window.currentActivePage = page;
+  localStorage.setItem('apex_current_page', page);
+  window.location.hash = page;
   
   const sidebarNavBtns = document.querySelectorAll('#appSidebar button');
   sidebarNavBtns.forEach(btn => {
