@@ -57,6 +57,26 @@ class InventoryController {
     }
   }
 
+  async updateProduct(req, res) {
+    const { id } = req.params;
+    const { name, category_id, supplier_id, cost_price, selling_price, min_stock_alert } = req.body;
+    if (!name || selling_price === undefined) {
+      return res.status(400).json({ success: false, error: 'Product name and selling price are required.' });
+    }
+
+    try {
+      await db.query(`
+        UPDATE products
+        SET name = $1, category_id = $2, supplier_id = $3, cost_price = $4, selling_price = $5, min_stock_alert = $6
+        WHERE id = $7 AND company_id = $8
+      `, [name, category_id || null, supplier_id || null, cost_price || 0.0, selling_price, min_stock_alert || 10, id, req.user.company_id]);
+
+      res.json({ success: true, message: 'Product details updated successfully.' });
+    } catch (err) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  }
+
   async deleteProduct(req, res) {
     try {
       await db.query('DELETE FROM products WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
@@ -137,6 +157,28 @@ class InventoryController {
       res.json({ success: true, category_id: info.rows[0].id });
     } catch (err) {
       res.status(400).json({ success: false, error: err.message });
+    }
+  }
+
+  async updateCategory(req, res) {
+    const { id } = req.params;
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ success: false, error: 'Category name is required.' });
+    try {
+      await db.query('UPDATE categories SET name = $1 WHERE id = $2 AND company_id = $3', [name, id, req.user.company_id]);
+      res.json({ success: true, message: 'Category updated.' });
+    } catch (err) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  }
+
+  async deleteCategory(req, res) {
+    const { id } = req.params;
+    try {
+      await db.query('DELETE FROM categories WHERE id = $1 AND company_id = $2', [id, req.user.company_id]);
+      res.json({ success: true, message: 'Category deleted.' });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
     }
   }
 
