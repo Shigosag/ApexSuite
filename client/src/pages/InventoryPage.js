@@ -32,8 +32,9 @@ async function renderInventoryPage() {
           datasets: [{
             label: `Asset Value (${currSym})`,
             data: invCatData,
-            backgroundColor: '#f34b7d',
-            borderRadius: 6
+            backgroundColor: ['#f34b7d', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6'],
+            borderRadius: 8,
+            maxBarThickness: 60
           }]
         },
         options: {
