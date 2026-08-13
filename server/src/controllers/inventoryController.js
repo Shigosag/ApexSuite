@@ -208,6 +208,32 @@ class InventoryController {
       res.status(400).json({ success: false, error: err.message });
     }
   }
+
+  async updateSupplier(req, res) {
+    const { id } = req.params;
+    const { name, contact_name, email, phone, address } = req.body;
+    if (!name) return res.status(400).json({ success: false, error: 'Supplier company name is required.' });
+    try {
+      await db.query(`
+        UPDATE suppliers 
+        SET name = $1, contact_name = $2, email = $3, phone = $4, address = $5 
+        WHERE id = $6 AND company_id = $7
+      `, [name, contact_name || '', email || '', phone || '', address || '', id, req.user.company_id]);
+      res.json({ success: true, message: 'Supplier profile updated.' });
+    } catch (err) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  }
+
+  async deleteSupplier(req, res) {
+    const { id } = req.params;
+    try {
+      await db.query('DELETE FROM suppliers WHERE id = $1 AND company_id = $2', [id, req.user.company_id]);
+      res.json({ success: true, message: 'Supplier profile deleted.' });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  }
 }
 
 module.exports = new InventoryController();
