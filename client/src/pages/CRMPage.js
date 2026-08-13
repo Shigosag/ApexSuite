@@ -366,43 +366,45 @@ async function renderCRMPage() {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 glass-panel rounded-2xl border border-slate-800 overflow-hidden">
           <div class="p-4 border-b border-slate-800 font-bold text-xs">Registered Customer Directory (${customers.length})</div>
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-800/60 uppercase text-gray-400">
-              <tr>
-                <th class="p-4">Customer Name</th>
-                <th class="p-4">Contact</th>
-                <th class="p-4">Segment</th>
-                <th class="p-4 font-mono">Orders</th>
-                <th class="p-4 font-mono">Total Spend</th>
-                <th class="p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800">
-              ${customers.length === 0 ? '<tr><td colspan="6" class="p-4 text-center text-gray-500">No client accounts found. Click "+ Add Customer" above to create one.</td></tr>' : customers.map(c => `
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-800/60 uppercase text-gray-400">
                 <tr>
-                  <td class="p-4">
-                    <p class="font-bold">${c.name}</p>
-                    <p class="text-[10px] text-gray-400">${c.company_name || 'Individual'}</p>
-                  </td>
-                  <td class="p-4">${c.email}<br><span class="text-[10px] text-gray-400">${c.phone || ''}</span></td>
-                  <td class="p-4"><span class="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 border border-slate-700 font-medium">${c.segment}</span></td>
-                  <td class="p-4 font-mono">${c.order_count || 0}</td>
-                  <td class="p-4 font-mono pink-brand-text font-bold">${formatCurrency(c.total_spent || 0)}</td>
-                  <td class="p-4 text-right space-x-1">
-                    <button onclick="openCustomerNotesModalById(${c.id})" title="Timeline Notes" class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-pink-brand">
-                      Notes
-                    </button>
-                    <button onclick="openEditCustomerModalById(${c.id})" class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300">
-                      Edit
-                    </button>
-                    <button onclick="openDeleteCustomerConfirmModal(${c.id})" class="p-1 rounded-lg bg-red-950/60 border border-red-500/30 text-red-400 hover:bg-red-900 inline-flex items-center">
-                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                    </button>
-                  </td>
+                  <th class="p-4">Customer Name</th>
+                  <th class="p-4">Contact</th>
+                  <th class="p-4">Segment</th>
+                  <th class="p-4 font-mono">Orders</th>
+                  <th class="p-4 font-mono">Total Spend</th>
+                  <th class="p-4 text-right pr-6 min-w-[160px]">Actions</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
+              </thead>
+              <tbody class="divide-y divide-slate-800">
+                ${customers.length === 0 ? '<tr><td colspan="6" class="p-4 text-center text-gray-500">No client accounts found. Click "+ Add Customer" above to create one.</td></tr>' : customers.map(c => `
+                  <tr>
+                    <td class="p-4">
+                      <p class="font-bold">${c.name}</p>
+                      <p class="text-[10px] text-gray-400">${c.company_name || 'Individual'}</p>
+                    </td>
+                    <td class="p-4">${c.email}<br><span class="text-[10px] text-gray-400">${c.phone || ''}</span></td>
+                    <td class="p-4"><span class="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 border border-slate-700 font-medium">${c.segment}</span></td>
+                    <td class="p-4 font-mono">${c.order_count || 0}</td>
+                    <td class="p-4 font-mono pink-brand-text font-bold">${formatCurrency(c.total_spent || 0)}</td>
+                    <td class="p-4 text-right pr-6 min-w-[160px] whitespace-nowrap space-x-1">
+                      <button onclick="openCustomerNotesModalById(${c.id})" title="Timeline Notes" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-pink-brand inline-flex items-center">
+                        Notes
+                      </button>
+                      <button onclick="openEditCustomerModalById(${c.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300 inline-flex items-center">
+                        Edit
+                      </button>
+                      <button onclick="openDeleteCustomerConfirmModal(${c.id})" class="p-1 rounded-lg bg-red-950/60 border border-red-500/30 text-red-400 hover:bg-red-900 inline-flex items-center">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div class="glass-panel p-4 rounded-2xl border border-slate-800 space-y-4">
