@@ -81,6 +81,8 @@ class APIService {
   deleteCategory(id) { return this.request(`/inventory/categories/${id}`, 'DELETE'); }
   getSuppliers() { return this.request('/inventory/suppliers'); }
   createSupplier(data) { return this.request('/inventory/suppliers', 'POST', data); }
+  updateSupplier(id, data) { return this.request(`/inventory/suppliers/${id}`, 'PUT', data); }
+  deleteSupplier(id) { return this.request(`/inventory/suppliers/${id}`, 'DELETE'); }
 
   getCustomers() { return this.request('/crm/customers'); }
   createCustomer(data) { return this.request('/crm/customers', 'POST', data); }
