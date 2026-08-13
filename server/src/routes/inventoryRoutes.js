@@ -5,6 +5,7 @@ const { authenticateToken, requireRole } = require('../middleware/authMiddleware
 
 router.get('/products', authenticateToken, inventoryController.getProducts);
 router.post('/products', authenticateToken, requireRole(['Admin', 'Manager']), inventoryController.createProduct);
+router.put('/products/:id', authenticateToken, requireRole(['Admin', 'Manager']), inventoryController.updateProduct);
 router.delete('/products/:id', authenticateToken, requireRole(['Admin', 'Manager']), inventoryController.deleteProduct);
 
 router.post('/stock-adjust', authenticateToken, requireRole(['Admin', 'Manager']), inventoryController.adjustStock);
@@ -12,6 +13,8 @@ router.post('/stock-transfer', authenticateToken, requireRole(['Admin', 'Manager
 
 router.get('/categories', authenticateToken, inventoryController.getCategories);
 router.post('/categories', authenticateToken, requireRole(['Admin', 'Manager']), inventoryController.createCategory);
+router.put('/categories/:id', authenticateToken, requireRole(['Admin', 'Manager']), inventoryController.updateCategory);
+router.delete('/categories/:id', authenticateToken, requireRole(['Admin', 'Manager']), inventoryController.deleteCategory);
 
 router.get('/suppliers', authenticateToken, inventoryController.getSuppliers);
 router.post('/suppliers', authenticateToken, requireRole(['Admin', 'Manager']), inventoryController.createSupplier);
