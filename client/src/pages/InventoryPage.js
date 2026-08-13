@@ -6,10 +6,14 @@ async function renderInventoryPage() {
     apiService.getSuppliers().catch(() => ({ data: [] }))
   ]);
 
-  const products = prodRes.data || [];
+  window.invProductsList = prodRes.data || [];
+  window.invCategoriesList = catRes.data || [];
+  window.invSuppliersList = supRes.data || [];
+
+  const products = window.invProductsList;
   const branches = branchRes.data || [];
-  const categories = catRes.data || [];
-  const suppliers = supRes.data || [];
+  const categories = window.invCategoriesList;
+  const suppliers = window.invSuppliersList;
   const currSym = getCurrencySymbol();
 
   // Group Stock Asset Value by Category for Chart.js Bar Chart
@@ -70,12 +74,82 @@ async function renderInventoryPage() {
     lucide.createIcons();
   };
 
-  window.openEditProductModal = (p) => {
-    openModal(`Edit Product: ${p.name}`, `
+  window.openEditProductModalById = (productId) => {
+    const p = window.invProductsList.find(item => item.id === productId);
+    if (!p) return;
+
+    openModal(`Edit Product Details: ${p.name}`, `
+      <form onsubmit="handleUpdateProductSubmit(event, ${p.id})" class="space-y-3">
+        <div>
+          <label class="text-[10px] text-gray-400">Product Name *</label>
+          <input type="text" id="editPName" value="${p.name || ''}" required class="w-full mt-0.5 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[10px] text-gray-400">Category</label>
+            <select id="editPCategory" class="w-full mt-0.5 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs">
+              <option value="">Uncategorized</option>
+              ${categories.map(c => `<option value="${c.id}" ${p.category_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400">Supplier</label>
+            <select id="editPSupplier" class="w-full mt-0.5 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs">
+              <option value="">No Direct Supplier</option>
+              ${suppliers.map(s => `<option value="${s.id}" ${p.supplier_id === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[10px] text-gray-400">Cost Price *</label>
+            <input type="number" step="0.01" id="editPCost" value="${p.cost_price || 0}" required class="w-full mt-0.5 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs font-mono">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400">Selling Price *</label>
+            <input type="number" step="0.01" id="editPPrice" value="${p.selling_price || 0}" required class="w-full mt-0.5 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs font-mono">
+          </div>
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400">Min Stock Alert Threshold</label>
+          <input type="number" id="editPAlert" value="${p.min_stock_alert || 10}" required class="w-full mt-0.5 bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs">
+        </div>
+        <button type="submit" class="w-full pink-btn py-2.5 rounded-xl font-bold text-xs mt-2">Update Product Details</button>
+      </form>
+    `);
+  };
+
+  window.handleUpdateProductSubmit = async (e, productId) => {
+    e.preventDefault();
+    const catVal = document.getElementById('editPCategory').value;
+    const supVal = document.getElementById('editPSupplier').value;
+
+    try {
+      await apiService.updateProduct(productId, {
+        name: document.getElementById('editPName').value,
+        category_id: catVal ? parseInt(catVal, 10) : null,
+        supplier_id: supVal ? parseInt(supVal, 10) : null,
+        cost_price: parseFloat(document.getElementById('editPCost').value),
+        selling_price: parseFloat(document.getElementById('editPPrice').value),
+        min_stock_alert: parseInt(document.getElementById('editPAlert').value, 10)
+      });
+      closeModal();
+      showToast('Product details updated successfully!', 'success');
+      navigate('inventory');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  window.openStockAdjustModalById = (productId) => {
+    const p = window.invProductsList.find(item => item.id === productId);
+    if (!p) return;
+
+    openModal(`Adjust Stock: ${p.name}`, `
       <form onsubmit="handleStockAdjustSubmit(event, ${p.id})" class="space-y-3">
         <div>
-          <label class="text-[10px] text-gray-400">Product Name</label>
-          <input type="text" value="${p.name}" disabled class="w-full bg-slate-900/60 border border-slate-700 rounded-xl p-2 text-xs text-gray-400">
+          <label class="text-[10px] text-gray-400">Current Stock Qty</label>
+          <p class="font-bold text-xs text-white">${p.current_stock} ${p.unit}</p>
         </div>
         <div>
           <label class="text-[10px] text-gray-400">Stock Adjustment Quantity (+ / -)</label>
@@ -200,6 +274,41 @@ async function renderInventoryPage() {
     }
   };
 
+  window.openEditCategoryModalById = (catId) => {
+    const c = window.invCategoriesList.find(item => item.id === catId);
+    if (!c) return;
+
+    openModal(`Edit Category: ${c.name}`, `
+      <form onsubmit="handleUpdateCategorySubmit(event, ${c.id})" class="space-y-3">
+        <input type="text" id="editCatName" value="${c.name || ''}" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
+        <button type="submit" class="w-full pink-btn py-2.5 rounded-xl font-bold text-xs">Update Category</button>
+      </form>
+    `);
+  };
+
+  window.handleUpdateCategorySubmit = async (e, catId) => {
+    e.preventDefault();
+    try {
+      await apiService.updateCategory(catId, { name: document.getElementById('editCatName').value });
+      closeModal();
+      showToast('Category updated!', 'success');
+      navigate('inventory');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  window.deleteCategoryItem = async (catId) => {
+    if (!confirm('Are you sure you want to delete this category?')) return;
+    try {
+      await apiService.deleteCategory(catId);
+      showToast('Category deleted.', 'success');
+      navigate('inventory');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
   window.openCreateSupplierModal = () => {
     openModal('Register Inventory Supplier', `
       <form onsubmit="handleCreateSupplier(event)" class="space-y-3">
@@ -229,7 +338,10 @@ async function renderInventoryPage() {
     }
   };
 
-  window.openStockTransferModal = (prodId, prodName) => {
+  window.openStockTransferModal = (prodId) => {
+    const p = window.invProductsList.find(item => item.id === prodId);
+    const prodName = p ? p.name : 'Product';
+
     openModal(`Stock Transfer: ${prodName}`, `
       <form onsubmit="handleStockTransfer(event, ${prodId})" class="space-y-3">
         <div>
@@ -333,10 +445,13 @@ async function renderInventoryPage() {
                   ${p.is_low_stock ? '<span class="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] bg-red-500/20 text-red-400 font-bold"><i data-lucide="alert-triangle" class="w-3 h-3"></i> LOW STOCK</span>' : '<span class="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/20 text-emerald-400 font-bold"><i data-lucide="check" class="w-3 h-3"></i> IN STOCK</span>'}
                 </td>
                 <td class="p-4 text-right space-x-1">
-                  <button onclick='openEditProductModal(${JSON.stringify(p).replace(/'/g, "&#39;")})' class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300">
+                  <button onclick="openEditProductModalById(${p.id})" title="Edit Details" class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-pink-brand">
+                    Edit
+                  </button>
+                  <button onclick="openStockAdjustModalById(${p.id})" class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300">
                     Adjust
                   </button>
-                  <button onclick="openStockTransferModal(${p.id}, '${p.name.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300">
+                  <button onclick="openStockTransferModal(${p.id})" class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300">
                     Transfer
                   </button>
                   <button onclick="deleteProductItem(${p.id})" class="p-1 rounded-lg bg-red-950/60 border border-red-500/30 text-red-400 hover:bg-red-900 inline-flex items-center">
@@ -357,11 +472,21 @@ async function renderInventoryPage() {
         </div>
         <table class="w-full text-left text-xs">
           <thead class="bg-slate-800/60 uppercase text-gray-400">
-            <tr><th class="p-4">Category Name</th></tr>
+            <tr><th class="p-4">Category Name</th><th class="p-4 text-right">Actions</th></tr>
           </thead>
           <tbody class="divide-y divide-slate-800">
-            ${categories.length === 0 ? '<tr><td class="p-4 text-center text-gray-500">No categories found.</td></tr>' : categories.map(c => `
-              <tr><td class="p-4 font-bold text-slate-200">${c.name}</td></tr>
+            ${categories.length === 0 ? '<tr><td colspan="2" class="p-4 text-center text-gray-500">No categories found.</td></tr>' : categories.map(c => `
+              <tr>
+                <td class="p-4 font-bold text-slate-200">${c.name}</td>
+                <td class="p-4 text-right space-x-1">
+                  <button onclick="openEditCategoryModalById(${c.id})" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-[11px] font-semibold text-gray-300">
+                    Edit
+                  </button>
+                  <button onclick="deleteCategoryItem(${c.id})" class="p-1 rounded-lg bg-red-950/60 border border-red-500/30 text-red-400 hover:bg-red-900 inline-flex items-center">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </td>
+              </tr>
             `).join('')}
           </tbody>
         </table>
