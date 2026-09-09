@@ -11,11 +11,13 @@ class OrderRepository {
       await client.query('BEGIN');
 
       for (const item of items) {
+        // Enforce concurrency safety via SELECT ... FOR UPDATE
         const prodRes = await client.query(`
           SELECT p.*, bi.stock_qty 
           FROM products p 
           JOIN branch_inventory bi ON p.id = bi.product_id 
           WHERE p.id = $1 AND bi.branch_id = $2
+          FOR UPDATE OF bi
         `, [item.product_id, branchId]);
 
         const prod = prodRes.rows[0];
