@@ -7,9 +7,10 @@ class AuditController {
         SELECT a.*, u.name as user_name, u.email as user_email
         FROM audit_logs a
         LEFT JOIN users u ON a.user_id = u.id
+        WHERE u.company_id = $1 OR a.user_id IS NULL
         ORDER BY a.timestamp DESC
         LIMIT 100
-      `);
+      `, [req.user.company_id]);
       res.json({ success: true, data: logs.rows });
     } catch (err) {
       res.status(500).json({ success: false, error: err.message });
