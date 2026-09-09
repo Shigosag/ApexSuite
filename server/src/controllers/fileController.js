@@ -2,7 +2,7 @@ const db = require('../database/connection');
 
 class FileController {
   async uploadFile(req, res) {
-    if (!req.file) return res.status(400).json({ success: false, error: 'No upload file provided.' });
+    if (!req.file) return res.status(400).json({ success: false, error: 'No upload file provided or invalid file format.' });
 
     try {
       const info = await db.query(
