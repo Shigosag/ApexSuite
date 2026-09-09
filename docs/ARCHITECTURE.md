@@ -1,7 +1,7 @@
 # ApexSuite System Architecture & Design Specification
 
 ## 1. System Overview
-ApexSuite is an enterprise-grade, multi-tenant AI-powered Business Management System combining Enterprise Resource Planning (ERP), Customer Relationship Management (CRM), Point-of-Sale (POS), and Financial Accounting.
+ApexSuite is an enterprise multi-tenant Business Management System combining Enterprise Resource Planning (ERP), Customer Relationship Management (CRM), Point-of-Sale (POS), and Financial Accounting.
 
 ---
 
@@ -37,41 +37,23 @@ ApexSuite is an enterprise-grade, multi-tenant AI-powered Business Management Sy
 ```
 
 ### Core Technologies
-* **Backend Runtime**: Node.js v22 LTS (PostgreSQL Persistence via `pg`)
+* **Backend Runtime**: Node.js v22 LTS with relational PostgreSQL persistence
 * **API Engine**: Express.js, Helmet, CORS, Express-Rate-Limit, Morgan
-* **Persistence Layer**: Cloud Serverless Relational PostgreSQL Database Engine
-* **Document Engine**: PDFKit for server-side invoice generation
-* **Client Architecture**: Vanilla ES6 Modular SPA (Single Page Application)
+* **Persistence Layer**: Relational PostgreSQL Database with Connection Pooling (`pg.Pool`)
+* **Document Engine**: PDFKit for server-side invoice rendering
+* **Client Architecture**: Vanilla ES6 Modular Single Page Application
 * **Styling & UI**: Tailwind CSS (Dark/Light glassmorphism themes), Lucide Icons
 
 ---
 
-## 3. Database Layer & Indexing Strategy
+## 3. Database Layer & Concurrency Hardening
 
-PostgreSQL is configured for high-concurrency connection pooling via `pg.Pool` with active SSL encryption:
-
-```javascript
-const pool = new Pool({
-  connectionString: env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
-```
-
-### Performance Indexes
-Explicit indexes optimize search paths and prevent full table scans across core entities:
-* `idx_users_email` & `idx_users_company`
-* `idx_products_company` & `idx_products_sku`
-* `idx_branch_inventory_product` (Composite index on product_id + branch_id)
-* `idx_customers_company`
-* `idx_orders_branch` & `idx_orders_customer`
-* `idx_order_items_order`
-* `idx_invoices_order`
-* `idx_expenses_branch`
-* `idx_audit_logs_user`
-* `idx_notifications_user`
+1. **Row-Level Concurrency Locking**:
+   * Critical stock-decrementing checkout transactions utilize `SELECT ... FOR UPDATE` locks on `branch_inventory` records. This prevents race conditions and overselling under concurrent load.
+2. **Double-Entry Balance Updates**:
+   * Payments, income entries, expense entries, and refunds operate inside atomic transactions (`BEGIN ... COMMIT`) that simultaneously update cash and revenue ledgers in `chart_of_accounts`.
+3. **Foreign Key Cascade and Tenant Scoping**:
+   * Data tables enforce company and branch relationships to guarantee data isolation across workspaces.
 
 ---
 
@@ -85,18 +67,6 @@ Explicit indexes optimize search paths and prevent full table scans across core 
    * API Rate Limiter: Maximum 300 requests per minute per IP globally.
 3. **Role-Based Access Control (RBAC)**:
    * Roles: `Admin`, `Manager`, `Employee`.
-   * Guard middleware restricts administrative actions (e.g., deleting branches, creating user accounts, viewing audit logs) to authorized roles.
+   * Server-side guards inspect token claims and database entity status on every privileged route.
 4. **Non-Blocking Audit Telemetry**:
-   * Audit middleware captures method, URL, route parameters, User ID, and client IP address asynchronously upon request completion.
-
----
-
-## 5. Deployment & Containerization Strategy
-
-### Docker Multi-Stage Build (`Dockerfile`)
-* **Builder Stage**: Compiles and resolves node dependencies on Node 22 Alpine Linux.
-* **Runner Stage**: Minimal Alpine runtime executing under a non-root `node` user with built-in HTTP healthchecks.
-
-### Docker Compose (`docker-compose.yml`)
-* Mounts persistent named volumes for file uploads (`apex_uploads`).
-* Applies restart policies (`restart: unless-stopped`) and environment variable injections.
+   * Asynchronously captures request metadata, authenticated actor ID, and remote IP upon completion.
