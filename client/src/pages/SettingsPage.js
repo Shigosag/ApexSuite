@@ -5,7 +5,6 @@ async function renderSettingsPage() {
     apiService.getAuditLogs().catch(() => ({ data: [] }))
   ]);
 
-  // Sort branches: HQ pinned at top, then by creation date
   const branches = (branchesRes.data || []).sort((a, b) => (b.is_headquarters ? 1 : 0) - (a.is_headquarters ? 1 : 0));
   const employees = empRes.data || [];
   const auditLogs = auditRes.data || [];
@@ -126,15 +125,20 @@ async function renderSettingsPage() {
     }
   };
 
-  window.deleteBranchLocation = async (branchId, branchName) => {
-    if (!confirm(`Are you sure you want to delete branch "${branchName}"?`)) return;
-    try {
-      await apiService.request(`/company/branches/${branchId}`, 'DELETE');
-      showToast('Branch location deleted.', 'success');
-      navigate('settings');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+  window.deleteBranchLocation = (branchId, branchName) => {
+    openConfirmModal(
+      'Delete Branch Location',
+      `Are you sure you want to delete branch "${branchName}"?`,
+      async () => {
+        try {
+          await apiService.request(`/company/branches/${branchId}`, 'DELETE');
+          showToast('Branch location deleted.', 'success');
+          navigate('settings');
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      }
+    );
   };
 
   window.openDeleteAccountConfirmModal = () => {
@@ -214,19 +218,24 @@ async function renderSettingsPage() {
     }
   };
 
-  window.deleteEmployeeAccount = async (id) => {
-    if (!confirm('Are you sure you want to remove this employee account?')) return;
-    try {
-      await apiService.deleteEmployee(id);
-      showToast('Employee account removed.', 'success');
-      navigate('settings');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+  window.deleteEmployeeAccount = (id) => {
+    openConfirmModal(
+      'Remove Employee Account',
+      'Are you sure you want to remove this employee account from your workspace directory?',
+      async () => {
+        try {
+          await apiService.deleteEmployee(id);
+          showToast('Employee account removed.', 'success');
+          navigate('settings');
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      }
+    );
   };
 
   window.exportDatabaseDataCSV = () => {
-    const csvContent = "data:text/csv;charset=utf-8,Module,Status,ExportDate\nInventory,Active,2026-08-06\nSales,Completed,2026-08-06";
+    const csvContent = "data:text/csv;charset=utf-8,Module,Status,ExportDate\nInventory,Active," + new Date().toISOString() + "\nSales,Completed," + new Date().toISOString();
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);

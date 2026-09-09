@@ -65,11 +65,15 @@ class InventoryController {
     }
 
     try {
-      await db.query(`
+      const updateResult = await db.query(`
         UPDATE products
         SET name = $1, category_id = $2, supplier_id = $3, cost_price = $4, selling_price = $5, min_stock_alert = $6
         WHERE id = $7 AND company_id = $8
       `, [name, category_id || null, supplier_id || null, cost_price || 0.0, selling_price, min_stock_alert || 10, id, req.user.company_id]);
+
+      if (updateResult.rowCount === 0) {
+        return res.status(404).json({ success: false, error: 'Product not found or unauthorized.' });
+      }
 
       res.json({ success: true, message: 'Product details updated successfully.' });
     } catch (err) {
@@ -79,7 +83,10 @@ class InventoryController {
 
   async deleteProduct(req, res) {
     try {
-      await db.query('DELETE FROM products WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
+      const deleteResult = await db.query('DELETE FROM products WHERE id = $1 AND company_id = $2', [req.params.id, req.user.company_id]);
+      if (deleteResult.rowCount === 0) {
+        return res.status(404).json({ success: false, error: 'Product not found or unauthorized.' });
+      }
       res.json({ success: true, message: 'Product removed from inventory.' });
     } catch (err) {
       res.status(500).json({ success: false, error: err.message });
@@ -106,7 +113,9 @@ class InventoryController {
 
     try {
       await client.query('BEGIN');
-      const sourceInvRes = await client.query('SELECT stock_qty FROM branch_inventory WHERE branch_id = $1 AND product_id = $2', [from_branch_id, product_id]);
+
+      // Row lock for source inventory
+      const sourceInvRes = await client.query('SELECT stock_qty FROM branch_inventory WHERE branch_id = $1 AND product_id = $2 FOR UPDATE', [from_branch_id, product_id]);
       const sourceInv = sourceInvRes.rows[0];
 
       if (!sourceInv || parseInt(sourceInv.stock_qty, 10) < quantity) {
@@ -116,7 +125,7 @@ class InventoryController {
 
       await client.query('UPDATE branch_inventory SET stock_qty = stock_qty - $1 WHERE branch_id = $2 AND product_id = $3', [quantity, from_branch_id, product_id]);
       
-      const targetInvRes = await client.query('SELECT stock_qty FROM branch_inventory WHERE branch_id = $1 AND product_id = $2', [to_branch_id, product_id]);
+      const targetInvRes = await client.query('SELECT stock_qty FROM branch_inventory WHERE branch_id = $1 AND product_id = $2 FOR UPDATE', [to_branch_id, product_id]);
       if (targetInvRes.rows.length > 0) {
         await client.query('UPDATE branch_inventory SET stock_qty = stock_qty + $1 WHERE branch_id = $2 AND product_id = $3', [quantity, to_branch_id, product_id]);
       } else {
@@ -165,7 +174,10 @@ class InventoryController {
     const { name } = req.body;
     if (!name) return res.status(400).json({ success: false, error: 'Category name is required.' });
     try {
-      await db.query('UPDATE categories SET name = $1 WHERE id = $2 AND company_id = $3', [name, id, req.user.company_id]);
+      const updateResult = await db.query('UPDATE categories SET name = $1 WHERE id = $2 AND company_id = $3', [name, id, req.user.company_id]);
+      if (updateResult.rowCount === 0) {
+        return res.status(404).json({ success: false, error: 'Category not found or unauthorized.' });
+      }
       res.json({ success: true, message: 'Category updated.' });
     } catch (err) {
       res.status(400).json({ success: false, error: err.message });
@@ -175,7 +187,10 @@ class InventoryController {
   async deleteCategory(req, res) {
     const { id } = req.params;
     try {
-      await db.query('DELETE FROM categories WHERE id = $1 AND company_id = $2', [id, req.user.company_id]);
+      const deleteResult = await db.query('DELETE FROM categories WHERE id = $1 AND company_id = $2', [id, req.user.company_id]);
+      if (deleteResult.rowCount === 0) {
+        return res.status(404).json({ success: false, error: 'Category not found or unauthorized.' });
+      }
       res.json({ success: true, message: 'Category deleted.' });
     } catch (err) {
       res.status(500).json({ success: false, error: err.message });
@@ -214,11 +229,15 @@ class InventoryController {
     const { name, contact_name, email, phone, address } = req.body;
     if (!name) return res.status(400).json({ success: false, error: 'Supplier company name is required.' });
     try {
-      await db.query(`
+      const updateResult = await db.query(`
         UPDATE suppliers 
         SET name = $1, contact_name = $2, email = $3, phone = $4, address = $5 
         WHERE id = $6 AND company_id = $7
       `, [name, contact_name || '', email || '', phone || '', address || '', id, req.user.company_id]);
+
+      if (updateResult.rowCount === 0) {
+        return res.status(404).json({ success: false, error: 'Supplier not found or unauthorized.' });
+      }
       res.json({ success: true, message: 'Supplier profile updated.' });
     } catch (err) {
       res.status(400).json({ success: false, error: err.message });
@@ -228,7 +247,10 @@ class InventoryController {
   async deleteSupplier(req, res) {
     const { id } = req.params;
     try {
-      await db.query('DELETE FROM suppliers WHERE id = $1 AND company_id = $2', [id, req.user.company_id]);
+      const deleteResult = await db.query('DELETE FROM suppliers WHERE id = $1 AND company_id = $2', [id, req.user.company_id]);
+      if (deleteResult.rowCount === 0) {
+        return res.status(404).json({ success: false, error: 'Supplier not found or unauthorized.' });
+      }
       res.json({ success: true, message: 'Supplier profile deleted.' });
     } catch (err) {
       res.status(500).json({ success: false, error: err.message });

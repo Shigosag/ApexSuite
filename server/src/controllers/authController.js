@@ -32,15 +32,15 @@ class AuthController {
     }
   }
 
-  async resetPassword(req, res) {
+  async changePassword(req, res) {
     try {
-      const { email, new_password } = req.body;
-      if (!email || !new_password) {
-        return res.status(400).json({ success: false, error: 'Email and new password are required.' });
+      const { current_password, new_password } = req.body;
+      if (!current_password || !new_password) {
+        return res.status(400).json({ success: false, error: 'Current password and new password are required.' });
       }
 
-      await authService.resetPassword(email, new_password);
-      res.json({ success: true, message: 'Password updated successfully. You may now log in.' });
+      await authService.changePassword(req.user.id, current_password, new_password);
+      res.json({ success: true, message: 'Password updated successfully.' });
     } catch (err) {
       res.status(400).json({ success: false, error: err.message });
     }

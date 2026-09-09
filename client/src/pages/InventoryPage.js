@@ -16,7 +16,6 @@ async function renderInventoryPage() {
   const suppliers = window.invSuppliersList;
   const currSym = getCurrencySymbol();
 
-  // Group Stock Asset Value by Category for Chart.js Bar Chart
   const catValueMap = {};
   products.forEach(p => {
     const cat = p.category_name || 'General';
@@ -180,15 +179,20 @@ async function renderInventoryPage() {
     }
   };
 
-  window.deleteProductItem = async (id) => {
-    if (!confirm('Are you sure you want to delete this product from inventory?')) return;
-    try {
-      await apiService.deleteProduct(id);
-      showToast('Product removed.', 'success');
-      navigate('inventory');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+  window.deleteProductItem = (id) => {
+    openConfirmModal(
+      'Delete Inventory Product',
+      'Are you sure you want to permanently delete this product from your inventory catalog?',
+      async () => {
+        try {
+          await apiService.deleteProduct(id);
+          showToast('Product removed.', 'success');
+          navigate('inventory');
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      }
+    );
   };
 
   window.openNewProductModal = () => {
@@ -298,15 +302,20 @@ async function renderInventoryPage() {
     }
   };
 
-  window.deleteCategoryItem = async (catId) => {
-    if (!confirm('Are you sure you want to delete this category?')) return;
-    try {
-      await apiService.deleteCategory(catId);
-      showToast('Category deleted.', 'success');
-      navigate('inventory');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+  window.deleteCategoryItem = (catId) => {
+    openConfirmModal(
+      'Delete Category',
+      'Are you sure you want to delete this product category?',
+      async () => {
+        try {
+          await apiService.deleteCategory(catId);
+          showToast('Category deleted.', 'success');
+          navigate('inventory');
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      }
+    );
   };
 
   window.openCreateSupplierModal = () => {
@@ -382,15 +391,20 @@ async function renderInventoryPage() {
     }
   };
 
-  window.deleteSupplierItem = async (supId) => {
-    if (!confirm('Are you sure you want to delete this supplier profile?')) return;
-    try {
-      await apiService.deleteSupplier(supId);
-      showToast('Supplier profile deleted.', 'success');
-      navigate('inventory');
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+  window.deleteSupplierItem = (supId) => {
+    openConfirmModal(
+      'Delete Supplier',
+      'Are you sure you want to delete this supplier profile?',
+      async () => {
+        try {
+          await apiService.deleteSupplier(supId);
+          showToast('Supplier profile deleted.', 'success');
+          navigate('inventory');
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      }
+    );
   };
 
   window.openStockTransferModal = (prodId) => {

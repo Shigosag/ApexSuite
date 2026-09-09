@@ -92,33 +92,32 @@ function togglePasswordVisibility(inputId, eyeIconId) {
   lucide.createIcons();
 }
 
-function openResetPasswordModal() {
-  openModal('Reset Workspace Password', `
-    <form onsubmit="handleResetPasswordSubmit(event)" class="space-y-3">
-      <div>
-        <label class="text-xs text-gray-400">Account Email *</label>
-        <input type="email" id="resetEmail" placeholder="admin@acme.com" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
+// Custom confirmation dialog replacing native window.confirm()
+function openConfirmModal(title, message, onConfirmCallback) {
+  window._pendingConfirmAction = onConfirmCallback;
+  openModal(title, `
+    <div class="space-y-4">
+      <p class="text-xs text-gray-300 leading-relaxed">${message}</p>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 py-2.5 rounded-xl text-xs font-bold text-gray-300">
+          Cancel
+        </button>
+        <button onclick="executeConfirmAction()" class="flex-1 bg-red-950 hover:bg-red-900 border border-red-500/50 text-red-200 py-2.5 rounded-xl font-bold text-xs">
+          Confirm
+        </button>
       </div>
-      <div>
-        <label class="text-xs text-gray-400">New Password *</label>
-        <input type="password" id="resetNewPass" placeholder="••••••••" required class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs">
-      </div>
-      <button type="submit" class="pink-btn py-2.5 rounded-xl font-bold text-xs w-full">Update Password</button>
-    </form>
+    </div>
   `);
 }
 
-async function handleResetPasswordSubmit(e) {
-  e.preventDefault();
-  const email = document.getElementById('resetEmail').value;
-  const pass = document.getElementById('resetNewPass').value;
-
-  try {
-    await apiService.resetPassword(email, pass);
+function executeConfirmAction() {
+  if (typeof window._pendingConfirmAction === 'function') {
+    const fn = window._pendingConfirmAction;
+    window._pendingConfirmAction = null;
     closeModal();
-    showToast('Password updated successfully! Please log in.', 'success');
-  } catch (err) {
-    showToast(err.message, 'error');
+    fn();
+  } else {
+    closeModal();
   }
 }
 
@@ -188,7 +187,6 @@ function bootApp() {
   document.getElementById('appLayout').classList.remove('hidden');
   document.getElementById('headerContainer').innerHTML = renderHeader();
 
-  // Restore current page from URL hash or localStorage upon refresh
   const hashPage = window.location.hash.replace('#', '');
   const savedPage = localStorage.getItem('apex_current_page') || 'dashboard';
   const startPage = hashPage || savedPage;

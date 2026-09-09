@@ -87,8 +87,8 @@ async function runMigrations() {
       weight NUMERIC(10, 2) DEFAULT 0.0,
       description TEXT,
       variant_name VARCHAR(255) DEFAULT 'Standard',
-      cost_price NUMERIC(12, 2) NOT NULL,
-      selling_price NUMERIC(12, 2) NOT NULL,
+      cost_price NUMERIC(12, 2) NOT NULL CHECK(cost_price >= 0),
+      selling_price NUMERIC(12, 2) NOT NULL CHECK(selling_price >= 0),
       min_stock_alert INTEGER DEFAULT 10,
       expiry_date DATE,
       image_url TEXT,
@@ -99,7 +99,7 @@ async function runMigrations() {
       id SERIAL PRIMARY KEY,
       branch_id INTEGER REFERENCES branches(id) ON DELETE CASCADE,
       product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
-      stock_qty INTEGER NOT NULL DEFAULT 0,
+      stock_qty INTEGER NOT NULL DEFAULT 0 CHECK(stock_qty >= 0),
       UNIQUE(branch_id, product_id)
     );
 
@@ -118,7 +118,7 @@ async function runMigrations() {
       product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
       from_branch_id INTEGER REFERENCES branches(id) ON DELETE CASCADE,
       to_branch_id INTEGER REFERENCES branches(id) ON DELETE CASCADE,
-      quantity INTEGER NOT NULL,
+      quantity INTEGER NOT NULL CHECK(quantity > 0),
       status VARCHAR(50) CHECK(status IN ('Pending', 'Completed', 'Cancelled')) DEFAULT 'Completed',
       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
@@ -136,19 +136,20 @@ async function runMigrations() {
       id SERIAL PRIMARY KEY,
       company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
       name VARCHAR(255) NOT NULL,
-      email VARCHAR(255) UNIQUE NOT NULL,
+      email VARCHAR(255) NOT NULL,
       phone VARCHAR(100),
       company_name VARCHAR(255),
       segment VARCHAR(100) DEFAULT 'General',
       tags TEXT,
-      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(company_id, email)
     );
 
     CREATE TABLE IF NOT EXISTS leads (
       id SERIAL PRIMARY KEY,
       customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE,
       title VARCHAR(255) NOT NULL,
-      value NUMERIC(12, 2) DEFAULT 0.0,
+      value NUMERIC(12, 2) DEFAULT 0.0 CHECK(value >= 0),
       stage VARCHAR(50) CHECK(stage IN ('New', 'Contacted', 'Proposal', 'Won', 'Lost')) DEFAULT 'New',
       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
@@ -187,7 +188,7 @@ async function runMigrations() {
       id SERIAL PRIMARY KEY,
       order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
       product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
-      quantity INTEGER NOT NULL,
+      quantity INTEGER NOT NULL CHECK(quantity > 0),
       unit_price NUMERIC(12, 2) NOT NULL,
       subtotal NUMERIC(12, 2) NOT NULL
     );
@@ -225,7 +226,7 @@ async function runMigrations() {
       branch_id INTEGER REFERENCES branches(id) ON DELETE CASCADE,
       category VARCHAR(255) NOT NULL,
       description TEXT NOT NULL,
-      amount NUMERIC(12, 2) NOT NULL,
+      amount NUMERIC(12, 2) NOT NULL CHECK(amount >= 0),
       expense_date DATE DEFAULT CURRENT_DATE
     );
 
@@ -248,7 +249,7 @@ async function runMigrations() {
     CREATE TABLE IF NOT EXISTS accounts_payable (
       id SERIAL PRIMARY KEY,
       supplier_id INTEGER REFERENCES suppliers(id) ON DELETE CASCADE,
-      amount NUMERIC(12, 2) NOT NULL,
+      amount NUMERIC(12, 2) NOT NULL CHECK(amount >= 0),
       due_date DATE NOT NULL,
       status VARCHAR(50) DEFAULT 'Unpaid'
     );
@@ -283,13 +284,8 @@ async function runMigrations() {
       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Ensure missing columns exist on existing database instances
     ALTER TABLE customers ADD COLUMN IF NOT EXISTS tags TEXT;
     ALTER TABLE branches ADD COLUMN IF NOT EXISTS branch_type VARCHAR(100) DEFAULT 'Regional Branch';
-
-    -- Fix FK RESTRICT constraint on order_items for existing PostgreSQL databases
-    ALTER TABLE order_items DROP CONSTRAINT IF EXISTS order_items_product_id_fkey;
-    ALTER TABLE order_items ADD CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE;
 
     -- Performance Indexes
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -313,7 +309,7 @@ async function runMigrations() {
 async function seedDataIfEmpty() {
   const compCountRes = await db.query('SELECT COUNT(*) as count FROM companies');
   if (parseInt(compCountRes.rows[0].count, 10) === 0) {
-    logger.info('Seeding initial workspace data into Neon PostgreSQL...');
+    logger.info('Seeding initial workspace data into PostgreSQL...');
 
     const cRes = await db.query("INSERT INTO companies (name, tax_id, currency) VALUES ($1, $2, $3) RETURNING id", ['ApexSuite Inc.', 'TAX-998877', 'USD']);
     const cId = cRes.rows[0].id;

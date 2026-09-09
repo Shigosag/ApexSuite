@@ -16,7 +16,12 @@ app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
-app.use(cors());
+
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('dev'));
@@ -41,7 +46,7 @@ app.use((err, req, res, next) => {
 
 async function startServer() {
   try {
-    // Execute Neon Database Schema & Migration Engine
+    // Execute Database Schema & Migration Engine
     await runMigrations();
 
     // Initialize Automated Background Scheduler Tasks
@@ -50,7 +55,7 @@ async function startServer() {
     // Start HTTP Server
     app.listen(env.PORT, () => {
       logger.info(`=============================================================`);
-      logger.info(`🚀 APEXSUITE ENTERPRISE AI ERP, CRM & POS ENGINE RUNNING`);
+      logger.info(`🚀 APEXSUITE ENTERPRISE BUSINESS MANAGEMENT SYSTEM RUNNING`);
       logger.info(`🟢 URL: http://localhost:${env.PORT}`);
       logger.info(`🐘 Database: PostgreSQL`);
       logger.info(`🎨 Branding: Powered by Shigosag (#f34b7d)`);
