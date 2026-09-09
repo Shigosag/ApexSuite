@@ -56,12 +56,16 @@ class AuthService {
     };
   }
 
-  async resetPassword(email, newPassword) {
-    const user = await userRepository.findByEmail(email);
-    if (!user) throw new Error('No registered workspace account found for that email address.');
+  async changePassword(userId, currentPassword, newPassword) {
+    const userRes = await db.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+    const user = userRes.rows[0];
+    if (!user) throw new Error('User account not found.');
 
-    const passHash = bcrypt.hashSync(newPassword, 10);
-    await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [passHash, user.id]);
+    const isValid = bcrypt.compareSync(currentPassword, user.password_hash);
+    if (!isValid) throw new Error('Current password does not match.');
+
+    const newHash = bcrypt.hashSync(newPassword, 10);
+    await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, userId]);
     return true;
   }
 }
