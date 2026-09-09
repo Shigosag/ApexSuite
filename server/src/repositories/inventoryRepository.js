@@ -17,7 +17,7 @@ class InventoryRepository {
   }
 
   async adjustStock(productId, branchId, adjustmentQty, reason) {
-    const existingRes = await db.query('SELECT stock_qty FROM branch_inventory WHERE branch_id = $1 AND product_id = $2', [branchId, productId]);
+    const existingRes = await db.query('SELECT stock_qty FROM branch_inventory WHERE branch_id = $1 AND product_id = $2 FOR UPDATE', [branchId, productId]);
     if (existingRes.rows.length > 0) {
       await db.query('UPDATE branch_inventory SET stock_qty = stock_qty + $1 WHERE branch_id = $2 AND product_id = $3', [adjustmentQty, branchId, productId]);
     } else {
