@@ -47,8 +47,8 @@ Authenticates user credentials and issues JWT access and refresh tokens.
 ### POST `/auth/register`
 Registers a new enterprise company workspace and admin user.
 
-### POST `/auth/reset-password`
-Resets the account password.
+### POST `/auth/change-password`
+Updates the password for an authenticated session. Requires `current_password` and `new_password`.
 
 ---
 
@@ -60,8 +60,14 @@ Retrieves all registered branch locations for the workspace.
 ### POST `/company/branches`
 Registers a new branch location (Requires `Admin` role).
 
+### PUT `/company/branches/:branchId`
+Updates branch details (Requires `Admin` role).
+
+### DELETE `/company/branches/:branchId`
+Deletes a non-HQ branch location (Requires `Admin` role).
+
 ### GET `/company/employees`
-Retrieves all employee directory accounts.
+Retrieves employee directory accounts.
 
 ### POST `/company/employees`
 Creates a new employee account (Requires `Admin` role).
@@ -86,7 +92,7 @@ Creates a new client account profile.
 Updates customer details.
 
 ### DELETE `/crm/customers/:id`
-Removes a customer profile.
+Removes a customer profile and associated deal references.
 
 ### GET `/crm/notes/:customerId`
 Retrieves engagement timeline notes for a customer.
@@ -94,19 +100,17 @@ Retrieves engagement timeline notes for a customer.
 ### POST `/crm/notes`
 Adds an engagement/communication note for a customer.
 
-* **Request Body**:
-```json
-{
-  "customer_id": 1,
-  "content": "Discussed Q4 SLA renewal with procurement team."
-}
-```
-
 ### GET `/crm/leads`
-Retrieves active deal pipelines.
+Retrieves active deal pipelines scoped to company.
 
 ### POST `/crm/leads`
 Creates a new deal pipeline lead.
+
+### PUT `/crm/leads/:id`
+Updates deal details with strict company ownership check.
+
+### DELETE `/crm/leads/:id`
+Deletes a deal pipeline with company ownership check.
 
 ### PATCH `/crm/leads/stage`
 Updates deal stage status (`New`, `Contacted`, `Proposal`, `Won`, `Lost`).
@@ -121,6 +125,9 @@ Fetches catalog items with real-time branch stock quantities and low-stock alert
 ### POST `/inventory/products`
 Creates a new inventory product entry (Requires `Admin` or `Manager` role).
 
+### PUT `/inventory/products/:id`
+Updates product specifications.
+
 ### DELETE `/inventory/products/:id`
 Deletes a product entry.
 
@@ -128,7 +135,7 @@ Deletes a product entry.
 Adjusts inventory count (`+` or `-`).
 
 ### POST `/inventory/stock-transfer`
-Executes an inter-branch stock transfer.
+Executes an atomic inter-branch stock transfer with row-level locks.
 
 ### GET `/inventory/categories`
 Retrieves product categories.
@@ -147,22 +154,13 @@ Registers a new inventory supplier.
 ## 5. POS Register & Sales (`/pos`)
 
 ### POST `/pos/checkout`
-Processes an atomic checkout transaction, updates stock, creates payment transactions, and generates invoices.
+Processes an atomic checkout transaction using row-level locking (`SELECT FOR UPDATE`), updates stock, creates payment transactions, and generates invoices.
 
 ### GET `/pos/orders`
 Retrieves recent sales orders for the current branch.
 
 ### POST `/pos/refund`
-Executes a refund for a previously completed order.
-
-* **Request Body**:
-```json
-{
-  "order_id": 1,
-  "amount": 129.99,
-  "reason": "Customer returned damaged item"
-}
-```
+Executes a refund for a previously completed order, reversing inventory and updating ledger accounts.
 
 ### GET `/pos/receipt/:orderId/pdf`
 Generates and downloads a formatted PDF receipt statement.
@@ -195,14 +193,8 @@ Retrieves unpaid supplier bills.
 ### POST `/finance/accounts-payable`
 Records a supplier bill in Accounts Payable.
 
-* **Request Body**:
-```json
-{
-  "supplier_id": 1,
-  "amount": 1500.00,
-  "due_date": "2026-09-01"
-}
-```
+### POST `/finance/accounts-payable/pay`
+Settles a supplier bill, deducting from Cash operating account.
 
 ### GET `/finance/chart-of-accounts`
 Fetches general chart of account ledgers and balances.
@@ -219,7 +211,7 @@ Executes analytical queries regarding business metrics, inventory diagnostics, o
 ## 8. File Uploads (`/files`)
 
 ### POST `/files/upload`
-Uploads binary attachments to object/disk storage.
+Uploads binary attachments to disk storage with MIME and extension validation.
 
 ---
 
