@@ -14,7 +14,7 @@ test('Utility Helpers - Tax Calculation', () => {
 
 test('Utility Helpers - Currency Formatting', () => {
   const formatted = formatCurrency(1250.5, '$');
-  assert.strictEqual(formatted, '$1250.50');
+  assert.strictEqual(formatted, '$1,250.50');
 });
 
 test('Utility Helpers - Input Sanitization', () => {
