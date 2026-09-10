@@ -85,7 +85,7 @@ https://apexsuite-64hxc.faable.link
 ## 🗂️ Project Structure
 
 ```txt
-ApexSuite-Monorepo/
+**ApexSuite-Monorepo/
 │
 ├── client/
 │   ├── src/
@@ -120,7 +120,7 @@ ApexSuite-Monorepo/
 ├── docker-compose.yml        # Container composition config
 ├── Dockerfile                # Multi-stage production container build
 ├── .env.example              # Environment variables template
-└── README.md
+└── README.md**
 ```
 
 ---
