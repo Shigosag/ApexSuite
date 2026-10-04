@@ -216,6 +216,20 @@ function toggleSidebar() {
   lucide.createIcons();
 }
 
+function closeMobileSidebar() {
+  localStorage.setItem('apex_sidebar_collapsed', 'true');
+  const activePage = window.currentActivePage || 'dashboard';
+  document.getElementById('sidebarContainer').innerHTML = renderSidebar(activePage);
+  lucide.createIcons();
+}
+
+function handleNavClick(page) {
+  if (window.innerWidth < 768) {
+    closeMobileSidebar();
+  }
+  navigate(page);
+}
+
 function openModal(title, bodyHtml, sizeClass = 'max-w-md') {
   const container = document.getElementById('modalContainer');
   container.innerHTML = renderModal(title, bodyHtml, sizeClass);
