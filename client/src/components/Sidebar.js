@@ -19,10 +19,10 @@ function renderSidebar(activePage = 'dashboard') {
     <!-- Mobile Backdrop: Click outside to close -->
     <div id="sidebarBackdrop" onclick="closeMobileSidebar()" class="${isCollapsed ? 'hidden' : 'block md:hidden'} fixed inset-0 bg-black/70 backdrop-blur-sm z-30 transition-opacity"></div>
 
-    <!-- Sidebar Drawer: Stays below header, fits 100% of visible flex height -->
-    <aside id="appSidebar" class="${isCollapsed ? 'hidden md:flex md:w-20' : 'flex absolute md:relative z-30 inset-y-0 left-0 w-64 shadow-2xl md:shadow-none'} glass-panel border-r border-slate-800/80 p-3 flex-col justify-between h-full shrink-0 transition-all duration-300 overflow-hidden">
-      <!-- Navigation Links (Scrollable if screen is short) -->
-      <div class="space-y-1.5 overflow-y-auto flex-1 pr-1">
+    <!-- Sidebar Drawer: Scrollable, with safe bottom padding for Android gesture/nav bar -->
+    <aside id="appSidebar" class="${isCollapsed ? 'hidden md:flex md:w-20' : 'flex absolute md:relative z-30 inset-y-0 left-0 w-64 shadow-2xl md:shadow-none'} glass-panel border-r border-slate-800/80 p-3 pb-16 md:pb-3 flex-col h-full shrink-0 transition-all duration-300 overflow-y-auto">
+      <!-- Navigation Links -->
+      <div class="space-y-1.5 flex-1 pr-1">
         <button onclick="handleNavClick('dashboard')" title="Dashboard" class="${getNavClass('dashboard')}">
           <i data-lucide="layout-dashboard" class="${getIconClass('dashboard')}"></i>
           <span class="truncate">Dashboard</span>
@@ -54,7 +54,7 @@ function renderSidebar(activePage = 'dashboard') {
       </div>
 
       <!-- Mobile User Info & Visible Logout Button -->
-      <div class="pt-3 pb-2 border-t border-slate-800/80 shrink-0 space-y-2 md:hidden">
+      <div class="pt-3 my-2 border-t border-slate-800/80 shrink-0 space-y-2 md:hidden">
         <div class="px-3 py-2 bg-slate-900/90 rounded-xl border border-slate-800">
           <p class="text-xs font-bold text-white truncate">${user.name}</p>
           <span class="text-[10px] pink-brand-text font-bold uppercase tracking-wider">${user.role}</span>
