@@ -113,8 +113,8 @@ async function renderDashboardPage() {
         </button>
       </div>
 
-      <!-- Top KPI Cards Row -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Top KPI Cards Row (2x2 on Mobile, 4x1 on Desktop) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="glass-panel p-4 lg:p-5 rounded-2xl border border-slate-800 flex flex-col justify-between overflow-hidden min-w-0">
           <p class="text-xs text-gray-400 font-medium truncate">Total Revenue</p>
           <h3 title="${formattedRevenue}" class="text-lg lg:text-xl xl:text-2xl font-bold mt-2 text-emerald-400 font-mono tracking-tight truncate min-w-0">${formattedRevenue}</h3>

@@ -15,7 +15,7 @@ function renderSidebar(activePage = 'dashboard') {
   };
 
   return `
-    <aside id="appSidebar" class="${isCollapsed ? 'w-20' : 'w-60'} glass-panel border-r border-slate-800/80 p-3 space-y-2 h-full shrink-0 transition-all duration-300 overflow-y-auto">
+    <aside id="appSidebar" class="${isCollapsed ? 'hidden md:block md:w-20' : 'block fixed md:relative z-30 inset-y-0 left-0 w-60'} glass-panel border-r border-slate-800/80 p-3 space-y-2 h-full shrink-0 transition-all duration-300 overflow-y-auto">
       <button onclick="navigate('dashboard')" title="Dashboard" class="${getNavClass('dashboard')}">
         <i data-lucide="layout-dashboard" class="${getIconClass('dashboard')}"></i>
         <span class="${isCollapsed ? 'hidden' : 'inline'} truncate">Dashboard</span>
