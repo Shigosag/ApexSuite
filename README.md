@@ -84,6 +84,8 @@ https://apexsuite-64hxc.faable.link
 
 ## 🗂️ Project Structure
 
+[![Architecture Diagram](https://img.shields.io/badge/View-GitDiagram-blue)](https://gitdiagram.com/Shigosag/ApexSuite)
+
 ```txt
 ApexSuite-Monorepo/
 │
